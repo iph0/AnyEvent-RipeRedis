@@ -1195,13 +1195,13 @@ Requires Redis 1.2 or higher, and any supported event loop.
     },
 
     on_connect_error => sub {
-      my $err   = shift;
+      my $err = shift;
 
       # error handling...
     },
 
     on_error => sub {
-      my $err   = shift;
+      my $err = shift;
 
       # error handling...
     },
@@ -1337,11 +1337,12 @@ error messages to C<STDERR>.
 
 =head2 <command>( [ @args ] [, $cb->( $reply, $err ) ] )
 
-The command callback can be specified as last argument of the method. The
-command reply is passed to the callback as first argument. If any error
-occurred during command execution, the error object is passed to the callback
-as second argument. If the callback is not specified and error occurred, the
-C<on_error> callback of the client is called.
+The callback in command method is optional and can be passed as last argument.
+If the callback specified, the reply is passed to the callback as first
+argument. If any error occurred during command execution, the error object is
+passed to the callback as second argument. If the callback in command method is
+not specified and error occurred, the C<on_error> callback of the client is
+called.
 
 Error object is the instance of the class L<AnyEvent::RipeRedis::Error> and has
 two methods: C<message()> to get error message and C<code()> to get error code.
@@ -1398,8 +1399,8 @@ Executes all previously queued commands in a transaction and restores the
 connection state to normal. When using C<WATCH>, C<EXEC> will execute commands
 only if the watched keys were not modified.
 
-If during a transaction at least one command fails, the callback of C<EXEC>
-command is called with error object and reply will be contain nested error
+If during a transaction at least one command fails, to the callback of C<exec()>
+method will be passed error object and the reply will be contain nested error
 objects for every failed command.
 
   $redis->multi();
@@ -1407,18 +1408,18 @@ objects for every failed command.
   $redis->incr('foo');    # causes an error
   $redis->exec(
     sub {
-      my $replies = shift;
-      my $err     = shift;
+      my $reply = shift;
+      my $err   = shift;
 
       if ( defined $err ) {
         my $err_msg  = $err->message();
         my $err_code = $err->code();
 
-        if ( defined $replies ) {
-          foreach my $reply ( @{$replies} ) {
+        if ( defined $reply ) {
+          foreach my $nested_reply ( @{$reply} ) {
             if ( ref($reply) eq 'AnyEvent::RipeRedis::Error' ) {
-              my $nested_err_msg  = $reply->message();
-              my $nested_err_code = $reply->code();
+              my $nested_err_msg  = $nested_reply->message();
+              my $nested_err_code = $nested_reply->code();
 
               # error handling...
             }
@@ -1457,15 +1458,19 @@ Once the client enters the subscribed state it is not supposed to issue any
 other commands, except for additional C<SUBSCRIBE>, C<PSUBSCRIBE>,
 C<UNSUBSCRIBE>, C<PUNSUBSCRIBE> and C<QUIT> commands.
 
-If the connection was lost, when the client has active subscriptions, the
-callback in appropriate C<(p)subscribe> method is called.
-
 The detailed information about Redis Pub/Sub can be found here:
 L<http://redis.io/topics/pubsub>
 
 =head2 subscribe( @channels, ( $cb | \%cbs ) )
 
-Subscribes the client to the specified channels.
+Subscribes the client to the specified channels. Method can accept two
+callbacks: C<on_reply> and C<on_message>. The C<on_reply> callback is called
+once when subscription to all specified channels will be activated. In first
+argument to the callback is passed the number of channels we are currently
+subscribed. If error occurred during subscription operation or subscription to
+specified channels was lost, to the C<on_reply> callback will be passed error
+objec. The C<on_message> callback is called on every published message. If
+method is called with one callback, it will be act as C<on_message> callback.
 
   $redis->subscribe( qw( foo bar ),
     { on_reply => sub {
@@ -1501,7 +1506,8 @@ Subscribes the client to the specified channels.
 
 =head2 psubscribe( @patterns, ( $cb | \%cbs ) )
 
-Subscribes the client to the given patterns.
+Subscribes the client to the given patterns. See C<subscribe()> method for
+details.
 
   $redis->psubscribe( qw( foo_* bar_* ),
     { on_reply => sub {
@@ -1544,7 +1550,8 @@ Posts a message to the given channel.
 =head2 unsubscribe( [ @channels ] [, $cb->( $reply, $err ) ] )
 
 Unsubscribes the client from the given channels, or from all of them if none
-is given.
+is given. In first argument to the callback is passed the number of channels we
+are currently subscribed or zero if we are unsubscribed from all channels.
 
   $redis->unsubscribe( qw( foo bar ),
     sub {
@@ -1564,7 +1571,8 @@ is given.
 =head2 punsubscribe( [ @patterns ] [, $cb->( $reply, $err ) ] )
 
 Unsubscribes the client from the given patterns, or from all of them if none
-is given.
+is given. See C<unsubscribe()> method for details.
+
 
   $redis->punsubscribe( qw( foo_* bar_* ),
     sub {
@@ -1598,7 +1606,7 @@ Redis 2.6 and higher support execution of Lua scripts on the server side.
 To execute a Lua script you can send one of the commands C<EVAL> or C<EVALSHA>,
 or use the special method C<eval_cached()>.
 
-=head2 eval_cached( $script, $numkeys [, @keys ] [, @args ] [, $cb ] );
+=head2 eval_cached( $script, $numkeys [, @keys ] [, @args ] [, $cb->( $reply, $err ) ] ] );
 
 When you call the C<eval_cached()> method, the client first generate a SHA1
 hash for a Lua script and cache it in memory. Then the client optimistically
@@ -1630,24 +1638,24 @@ instead.
 Be care, passing a different Lua scripts to C<eval_cached()> method every time
 cause memory leaks.
 
-If Lua script returns multi-bulk reply with at least one error reply, the
-callback is called with error object and reply will be contain nested error
-objects.
+If Lua script returns multi-bulk reply with at least one error reply, to the
+callback of C<eval_cached> method will be passed error object and the reply
+will be contain nested error objects.
 
   $redis->eval_cached( "return { 'foo', redis.error_reply( 'Error.' ) }", 0,
     sub {
-      my $replies = shift;
-      my $err     = shift;
+      my $reply = shift;
+      my $err   = shift;
 
       if ( defined $err ) {
         my $err_msg  = $err->message;
         my $err_code = $err->code;
 
         if ( defined $reply ) {
-          foreach my $reply ( @{$replies} ) {
+          foreach my $nested_reply ( @{$reply} ) {
             if ( ref($reply) eq 'AnyEvent::RipeRedis::Error' ) {
-              my $nested_err_msg  = $reply->message();
-              my $nested_err_code = $reply->code();
+              my $nested_err_msg  = $nested_reply->message();
+              my $nested_err_code = $nested_reply->code();
 
               # error handling...
             }
@@ -1665,11 +1673,9 @@ objects.
 
 =head1 ERROR CODES
 
-Every time when error occurred the error code is passed to C<on_error> or to
-C<on_reply> callback. Error codes can be used for programmatic handling of errors.
-
-AnyEvent::RipeRedis provides constants of error codes, which can be
-imported and used in expressions.
+Error codes can be used for programmatic handling of errors.
+AnyEvent::RipeRedis provides constants of error codes, which can be imported
+and used in expressions.
 
   use AnyEvent::RipeRedis qw( :err_codes );
 
@@ -1819,22 +1825,16 @@ aborted.
 
   $redis->disconnect();
 
-=head2 quit()
+=head2 quit( [ $cb->( $reply, $err ) ] )
 
 The method for asynchronous disconnection.
 
-  $redis->quit(
-    sub {
-      # handling...
-    }
-  );
-
 =head1 OTHER METHODS
 
-=head2 info( [ $section ] [, $cb ] )
+=head2 info( [ $section ] [, $cb->( $reply, $err ) ] )
 
 Gets and parses information and statistics about the server. The result
-is passed to C<on_done> or C<on_reply> callback as a hash reference.
+is passed to callback as a hash reference.
 
 More information abount C<INFO> command can be found here:
 L<http://redis.io/commands/info>
@@ -1847,7 +1847,7 @@ Get current host of the client.
 
 Get current port of the client.
 
-=head2 select( $index )
+=head2 select( $index, [, $cb->( $reply, $err ) ] )
 
 Selects the database by numeric index.
 

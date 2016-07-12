@@ -37,8 +37,8 @@ AnyEvent::RipeRedis::Error - Class of error for AnyEvent::RipeRedis
 
 =head1 DESCRIPTION
 
-Class of error for L<AnyEvent::RipeRedis>. Object of this class can be passed
-to command callbacks.
+Class of error for L<AnyEvent::RipeRedis>. Objects of this class can be passed
+to callbacks.
 
 =head1 CONSTRUCTOR
 
