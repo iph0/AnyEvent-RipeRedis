@@ -789,8 +789,7 @@ sub _auth {
       args => [ $self->{password} ],
 
       on_reply => sub {
-        my $reply = shift;
-        my $err   = shift;
+        my $err = $_[1];
 
         if ( defined $err ) {
           $self->{_auth_state} = S_NEED_PERFORM;
@@ -827,8 +826,7 @@ sub _select_database {
       args => [ $self->{database} ],
 
       on_reply => sub {
-        my $reply = shift;
-        my $err   = shift;
+        my $err = $_[1];
 
         if ( defined $err ) {
           $self->{_select_state} = S_NEED_PERFORM;
