@@ -6,7 +6,7 @@ use warnings;
 use AnyEvent;
 use AnyEvent::RipeRedis;
 
-my $cv = AE::cv();
+my $cv = AE::cv;
 
 my $redis = AnyEvent::RipeRedis->new(
   host     => 'localhost',
@@ -115,6 +115,6 @@ my $on_signal = sub {
 my $int_w  = AE::signal( INT  => $on_signal );
 my $term_w = AE::signal( TERM => $on_signal );
 
-$cv->recv();
+$cv->recv;
 
-$redis->disconnect();
+$redis->disconnect;

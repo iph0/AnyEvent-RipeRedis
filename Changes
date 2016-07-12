@@ -1,4 +1,1 @@
 Revision history for AnyEvent::RipeRedis.
-
-0.02  MSK 2016
-  - Initial stable release. Forked from AnyEvent::Redis::RipeRedis and refactored.
