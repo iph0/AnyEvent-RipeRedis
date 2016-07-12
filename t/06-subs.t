@@ -10,7 +10,7 @@ my $SERVER_INFO = run_redis_instance();
 if ( !defined $SERVER_INFO ) {
   plan skip_all => 'redis-server is required for this test';
 }
-plan tests => 9;
+plan tests => 11;
 
 my $R_CONSUM = AnyEvent::RipeRedis->new(
   host => $SERVER_INFO->{host},
@@ -64,7 +64,7 @@ sub t_subunsub {
             my $err      = shift;
 
             if ( defined $err ) {
-              diag( $err->messge );
+              diag( $err->message );
               return;
             }
 
@@ -113,16 +113,29 @@ sub t_subunsub {
     'SUBSCRIBE; publish message'
   );
 
-  my $t_unsub_reply;
+  my $t_unsub_reply_1;
+  my $t_unsub_reply_2;
 
   ev_loop(
     sub {
       my $cv = shift;
 
-      $r_consum->unsubscribe( qw( foo bar events signals ),
+      $r_consum->unsubscribe( qw( foo bar ),
         sub {
-          $t_unsub_reply = shift;
-          my $err        = shift;
+          $t_unsub_reply_1 = shift;
+          my $err          = shift;
+
+          if ( defined $err ) {
+            diag( $err->message );
+            return;
+          }
+        }
+      );
+
+      $r_consum->unsubscribe(
+        sub {
+          $t_unsub_reply_2 = shift;
+          my $err          = shift;
 
           if ( defined $err ) {
             diag( $err->message );
@@ -135,7 +148,8 @@ sub t_subunsub {
     }
   );
 
-  is( $t_unsub_reply, 0, 'UNSUBSCRIBE' );
+  is( $t_unsub_reply_1, 2, 'UNSUBSCRIBE; from specified channels' );
+  is( $t_unsub_reply_2, 0, 'UNSUBSCRIBE; from all channels' );
 
   return;
 }
@@ -231,16 +245,29 @@ sub t_psubunsub {
     'PSUBSCRIBE; publish message'
   );
 
-  my $t_punsub_reply;
+  my $t_punsub_reply_1;
+  my $t_punsub_reply_2;
 
   ev_loop(
     sub {
       my $cv = shift;
 
-      $r_consum->punsubscribe( qw( foo_* bar_* events_* signals_* ),
+      $r_consum->punsubscribe( qw( foo_* bar_* ),
         sub {
-          $t_punsub_reply = shift;
-          my $err         = shift;
+          $t_punsub_reply_1 = shift;
+          my $err           = shift;
+
+          if ( defined $err ) {
+            diag( $err->message );
+            return;
+          }
+        }
+      );
+
+      $r_consum->punsubscribe(
+        sub {
+          $t_punsub_reply_2 = shift;
+          my $err           = shift;
 
           if ( defined $err ) {
             diag( $err->message );
@@ -253,7 +280,8 @@ sub t_psubunsub {
     }
   );
 
-  is( $t_punsub_reply, 0, 'PUNSUBSCRIBE' );
+  is( $t_punsub_reply_1, 2, 'PUNSUBSCRIBE; from specified patterns' );
+  is( $t_punsub_reply_2, 0, 'PUNSUBSCRIBE; from all patterns' );
 
   return;
 }

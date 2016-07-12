@@ -141,9 +141,9 @@ sub new {
 
   $self->{_handle}          = undef;
   $self->{_connected}       = 0;
-  $self->{_lazy_conn_st}    = $params{lazy};
-  $self->{_auth_st}         = S_NEED_PERFORM;
-  $self->{_select_db_st}    = S_NEED_PERFORM;
+  $self->{_lazy_conn_state} = $params{lazy};
+  $self->{_auth_state}      = S_NEED_PERFORM;
+  $self->{_select_state}    = S_NEED_PERFORM;
   $self->{_ready}           = 0;
   $self->{_input_queue}     = [];
   $self->{_tmp_queue}       = [];
@@ -154,8 +154,8 @@ sub new {
   $self->{_pchannel_cnt}    = 0;
   $self->{_reconnect_timer} = undef;
 
-  unless ( $self->{_lazy_conn_st} ) {
-    $self->_connect();
+  unless ( $self->{_lazy_conn_state} ) {
+    $self->_connect;
   }
 
   return $self;
@@ -269,7 +269,7 @@ sub quit {
       return;
     }
 
-    $self->_disconnect();
+    $self->_disconnect;
 
     $on_reply->($reply);
   };
@@ -282,7 +282,7 @@ sub quit {
 sub disconnect {
   my $self = shift;
 
-  $self->_disconnect();
+  $self->_disconnect;
 
   return;
 }
@@ -294,7 +294,7 @@ sub disconnect {
   foreach my $kwd ( keys %SUBUNSUB_COMMANDS ) {
     *{$kwd} = sub {
       my $self = shift;
-      my $cmd  = $self->_prepare_command( $kwd, [ @_ ] );
+      my $cmd = $self->_prepare_command( $kwd, [@_] );
 
       if ( exists $SUB_COMMANDS{ $cmd->{kwd} }
         && !defined $cmd->{on_message} )
@@ -319,14 +319,6 @@ sub disconnect {
 
       if ( @{ $cmd->{args} } ) {
         $cmd->{reply_cnt} = scalar @{ $cmd->{args} };
-      }
-      else {
-        if ( $cmd->{kwd} eq 'unsubscribe' ) {
-          $cmd->{reply_cnt} = $self->{_channel_cnt};
-        }
-        elsif ( $cmd->{kwd} eq 'punsubscribe' ) {
-          $cmd->{reply_cnt} = $self->{_pchannel_cnt};
-        }
       }
 
       $self->_execute_command($cmd);
@@ -417,13 +409,13 @@ sub _connect {
   $self->{_handle} = AnyEvent::Handle->new(
     %{ $self->{handle_params} },
     connect          => [ $self->{host}, $self->{port} ],
-    on_prepare       => $self->_get_on_prepare(),
-    on_connect       => $self->_get_on_connect(),
-    on_connect_error => $self->_get_on_connect_error(),
-    on_rtimeout      => $self->_get_on_rtimeout(),
-    on_eof           => $self->_get_on_eof(),
-    on_error         => $self->_get_handle_on_error(),
-    on_read          => $self->_get_on_read(),
+    on_prepare       => $self->_get_on_prepare,
+    on_connect       => $self->_get_on_connect,
+    on_connect_error => $self->_get_on_connect_error,
+    on_rtimeout      => $self->_get_on_rtimeout,
+    on_eof           => $self->_get_on_eof,
+    on_error         => $self->_get_handle_on_error,
+    on_read          => $self->_get_on_read,
   );
 
   return;
@@ -452,21 +444,21 @@ sub _get_on_connect {
     $self->{_connected} = 1;
 
     unless ( defined $self->{password} ) {
-      $self->{_auth_st} = S_DONE;
+      $self->{_auth_state} = S_DONE;
     }
     if ( $self->{database} == 0 ) {
-      $self->{_select_db_st} = S_DONE;
+      $self->{_select_state} = S_DONE;
     }
 
-    if ( $self->{_auth_st} == S_NEED_PERFORM ) {
-      $self->_auth();
+    if ( $self->{_auth_state} == S_NEED_PERFORM ) {
+      $self->_auth;
     }
-    elsif ( $self->{_select_db_st} == S_NEED_PERFORM ) {
-      $self->_select_database();
+    elsif ( $self->{_select_state} == S_NEED_PERFORM ) {
+      $self->_select_database;
     }
     else {
       $self->{_ready} = 1;
-      $self->_flush_input_queue();
+      $self->_flush_input_queue;
     }
 
     if ( defined $self->{on_connect} ) {
@@ -548,7 +540,7 @@ sub _get_on_read {
     my $handle = shift;
 
     MAIN: while (1) {
-      if ( $handle->destroyed() ) {
+      if ( $handle->destroyed ) {
         return;
       }
 
@@ -699,19 +691,19 @@ sub _execute_command {
   unless ( $self->{_ready} ) {
     if ( defined $self->{_handle} ) {
       if ( $self->{_connected} ) {
-        if ( $self->{_auth_st} == S_DONE ) {
-          if ( $self->{_select_db_st} == S_NEED_PERFORM ) {
-            $self->_select_database();
+        if ( $self->{_auth_state} == S_DONE ) {
+          if ( $self->{_select_state} == S_NEED_PERFORM ) {
+            $self->_select_database;
           }
         }
-        elsif ( $self->{_auth_st} == S_NEED_PERFORM ) {
-          $self->_auth();
+        elsif ( $self->{_auth_state} == S_NEED_PERFORM ) {
+          $self->_auth;
         }
       }
     }
-    elsif ( $self->{_lazy_conn_st} ) {
-      $self->{_lazy_conn_st} = 0;
-      $self->_connect();
+    elsif ( $self->{_lazy_conn_state} ) {
+      $self->{_lazy_conn_state} = 0;
+      $self->_connect;
     }
     elsif ( $self->{reconnect} ) {
       if ( defined $self->{min_reconnect_interval}
@@ -722,13 +714,13 @@ sub _execute_command {
             $self->{min_reconnect_interval}, 0,
             sub {
               undef $self->{_reconnect_timer};
-              $self->_connect();
+              $self->_connect;
             }
           );
         }
       }
       else {
-        $self->_connect();
+        $self->_connect;
       }
     }
     else {
@@ -775,7 +767,7 @@ sub _push_write {
   my $handle = $self->{_handle};
 
   if ( defined $self->{read_timeout} && !@{ $self->{_process_queue} } ) {
-    $handle->rtimeout_reset();
+    $handle->rtimeout_reset;
     $handle->rtimeout( $self->{read_timeout} );
   }
 
@@ -790,7 +782,7 @@ sub _auth {
 
   weaken($self);
 
-  $self->{_auth_st} = S_IN_PROGRESS;
+  $self->{_auth_state} = S_IN_PROGRESS;
 
   $self->_push_write(
     { kwd  => 'auth',
@@ -801,20 +793,20 @@ sub _auth {
         my $err   = shift;
 
         if ( defined $err ) {
-          $self->{_auth_st} = S_NEED_PERFORM;
+          $self->{_auth_state} = S_NEED_PERFORM;
           $self->_abort($err);
 
           return;
         }
 
-        $self->{_auth_st} = S_DONE;
+        $self->{_auth_state} = S_DONE;
 
-        if ( $self->{_select_db_st} == S_NEED_PERFORM ) {
-          $self->_select_database();
+        if ( $self->{_select_state} == S_NEED_PERFORM ) {
+          $self->_select_database;
         }
         else {
           $self->{_ready} = 1;
-          $self->_flush_input_queue();
+          $self->_flush_input_queue;
         }
       },
     }
@@ -828,7 +820,7 @@ sub _select_database {
 
   weaken($self);
 
-  $self->{_select_db_st} = S_IN_PROGRESS;
+  $self->{_select_state} = S_IN_PROGRESS;
 
   $self->_push_write(
     { kwd  => 'select',
@@ -839,15 +831,15 @@ sub _select_database {
         my $err   = shift;
 
         if ( defined $err ) {
-          $self->{_select_db_st} = S_NEED_PERFORM;
+          $self->{_select_state} = S_NEED_PERFORM;
           $self->_abort($err);
 
           return;
         }
 
-        $self->{_select_db_st} = S_DONE;
+        $self->{_select_state} = S_DONE;
         $self->{_ready}        = 1;
-        $self->_flush_input_queue();
+        $self->_flush_input_queue;
       },
     }
   );
@@ -945,8 +937,8 @@ sub _process_message {
     return;
   }
 
-  $cmd->{on_message}->( $msg->[0] eq 'pmessage'
-      ? @{$msg}[ 3, 1, 2 ] : @{$msg}[ 2, 1 ] );
+  $cmd->{on_message}->( $msg->[0] eq 'pmessage' ? @{$msg}[ 3, 1, 2 ]
+      : @{$msg}[ 2, 1 ] );
 
   return;
 }
@@ -956,9 +948,6 @@ sub _process_success {
   my $reply = shift;
 
   my $cmd = $self->{_process_queue}[0];
-  if ( !defined $cmd->{reply_cnt} || --$cmd->{reply_cnt} == 0 ) {
-    shift @{ $self->{_process_queue} };
-  }
 
   unless ( defined $cmd ) {
     my $err = AnyEvent::RipeRedis::Error->new(
@@ -971,28 +960,36 @@ sub _process_success {
   }
 
   if ( exists $SUBUNSUB_COMMANDS{ $cmd->{kwd} } ) {
-    if ( $reply->[0] eq 'subscribe' ) {
+    if ( $cmd->{kwd} eq 'subscribe' ) {
       $self->{_channels}{ $reply->[1] } = $cmd;
       $self->{_channel_cnt}++;
     }
-    elsif ( $reply->[0] eq 'psubscribe' ) {
+    elsif ( $cmd->{kwd} eq 'psubscribe' ) {
       $self->{_channels}{ $reply->[1] } = $cmd;
       $self->{_pchannel_cnt}++;
     }
-    elsif ( $reply->[0] eq 'unsubscribe' ) {
+    elsif ( $cmd->{kwd} eq 'unsubscribe' ) {
+      unless ( defined $cmd->{reply_cnt} ) {
+        $cmd->{reply_cnt} = $self->{_channel_cnt};
+      }
+
       delete $self->{_channels}{ $reply->[1] };
       $self->{_channel_cnt}--;
     }
     else {    # punsubscribe
+      unless ( defined $cmd->{reply_cnt} ) {
+        $cmd->{reply_cnt} = $self->{_pchannel_cnt};
+      }
+
       delete $self->{_channels}{ $reply->[1] };
       $self->{_pchannel_cnt}--;
     }
 
-    if ( $cmd->{reply_cnt} == 0 ) {
-      $cmd->{on_reply}->( $reply->[2] );
-    }
+    $reply = $reply->[2];
   }
-  else {
+
+  if ( !defined $cmd->{reply_cnt} || --$cmd->{reply_cnt} == 0 ) {
+    shift @{ $self->{_process_queue} };
     $cmd->{on_reply}->($reply);
   }
 
@@ -1006,12 +1003,12 @@ sub _disconnect {
   my $was_connected = $self->{_connected};
 
   if ( defined $self->{_handle} ) {
-    $self->{_handle}->destroy();
+    $self->{_handle}->destroy;
     undef $self->{_handle};
   }
   $self->{_connected}    = 0;
-  $self->{_auth_st}      = S_NEED_PERFORM;
-  $self->{_select_db_st} = S_NEED_PERFORM;
+  $self->{_auth_state}   = S_NEED_PERFORM;
+  $self->{_select_state} = S_NEED_PERFORM;
   $self->{_ready}        = 0;
   $self->{_txn_lock}     = 0;
 

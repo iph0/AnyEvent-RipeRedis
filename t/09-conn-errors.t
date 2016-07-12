@@ -121,7 +121,7 @@ sub t_no_connection {
   my $port = empty_port();
 
   my $t_cli_err;
-  my $t_cmd_err_0;
+  my $t_cmd_err_1;
 
   AE::now_update();
   ev_loop(
@@ -141,7 +141,7 @@ sub t_no_connection {
       $redis->ping(
         sub {
           my $reply    = shift;
-          $t_cmd_err_0 = shift;
+          $t_cmd_err_1 = shift;
 
           $cv->send;
         }
@@ -154,13 +154,13 @@ sub t_no_connection {
   isa_ok( $t_cli_err, 'AnyEvent::RipeRedis::Error' );
   like( $t_cli_err->message, qr/^Can't connect to localhost:$port:/,
       "$t_npref; client error message" );
-  isa_ok( $t_cmd_err_0, 'AnyEvent::RipeRedis::Error' );
-  like( $t_cmd_err_0->message,
+  isa_ok( $t_cmd_err_1, 'AnyEvent::RipeRedis::Error' );
+  like( $t_cmd_err_1->message,
       qr/^Operation "ping" aborted: Can't connect to localhost:$port:/,
       "$t_npref; first command error message" );
-  is( $t_cmd_err_0->code, E_CANT_CONN, "$t_npref; first command error code" );
+  is( $t_cmd_err_1->code, E_CANT_CONN, "$t_npref; first command error code" );
 
-  my $t_cmd_err_1;
+  my $t_cmd_err_2;
 
   ev_loop(
     sub {
@@ -169,7 +169,7 @@ sub t_no_connection {
       $redis->ping(
         sub {
           my $reply    = shift;
-          $t_cmd_err_1 = shift;
+          $t_cmd_err_2 = shift;
 
           $cv->send;
         }
@@ -177,11 +177,11 @@ sub t_no_connection {
     }
   );
 
-  isa_ok( $t_cmd_err_1, 'AnyEvent::RipeRedis::Error' );
-  is( $t_cmd_err_1->message,
+  isa_ok( $t_cmd_err_2, 'AnyEvent::RipeRedis::Error' );
+  is( $t_cmd_err_2->message,
       q{Operation "ping" aborted: No connection to the server.},
       "$t_npref; second command error message" );
-  is( $t_cmd_err_1->code, E_NO_CONN, "$t_npref; second command error code" );
+  is( $t_cmd_err_2->code, E_NO_CONN, "$t_npref; second command error code" );
 
   return;
 }
