@@ -1166,9 +1166,9 @@ feature
 
 =head1 DESCRIPTION
 
-AnyEvent::RipeRedis is the flexible non-blocking Redis client with
-reconnect feature. The client supports subscriptions, transactions and connection
-via UNIX-socket.
+AnyEvent::RipeRedis is flexible non-blocking Redis client with reconnect
+feature. The client supports subscriptions, transactions and connection via
+UNIX-socket.
 
 Requires Redis 1.2 or higher, and any supported event loop.
 
