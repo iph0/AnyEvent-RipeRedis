@@ -194,7 +194,7 @@ sub t_reconnection {
 
   SKIP: {
     if ( !defined $server_info ) {
-      skip 'redis-server is required for this test', 5;
+      skip 'redis-server is required for this test', 6;
     }
 
     my $t_conn_cnt = 0;
@@ -295,7 +295,7 @@ sub t_read_timeout {
 
   SKIP: {
     if ( !defined $server_info ) {
-      skip 'redis-server is required for this test', 4;
+      skip 'redis-server is required for this test', 6;
     }
 
     my $redis;
@@ -415,7 +415,7 @@ sub t_subscription_lost {
 
   SKIP: {
     if ( !defined $server_info ) {
-      skip 'redis-server is required for this test', 4;
+      skip 'redis-server is required for this test', 6;
     }
 
     my $redis;
