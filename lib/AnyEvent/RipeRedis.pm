@@ -1100,7 +1100,7 @@ sub AUTOLOAD {
 sub DESTROY {
   my $self = shift;
 
-  if ( defined $self->{_handle} ) {
+  if ( defined $self->{_processing_queue} ) {
     my @unfin_cmds = (
       @{ $self->{_processing_queue} },
       @{ $self->{_temp_queue} },
