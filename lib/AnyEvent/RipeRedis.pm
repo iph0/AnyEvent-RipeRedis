@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.01_02';
+our $VERSION = '0.01_03';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -139,20 +139,20 @@ sub new {
   }
   $self->{handle_params} = $hdl_params;
 
-  $self->{_handle}          = undef;
-  $self->{_connected}       = 0;
-  $self->{_lazy_conn_state} = $params{lazy};
-  $self->{_auth_state}      = S_NEED_PERFORM;
-  $self->{_select_state}    = S_NEED_PERFORM;
-  $self->{_ready}           = 0;
-  $self->{_input_queue}     = [];
-  $self->{_tmp_queue}       = [];
-  $self->{_process_queue}   = [];
-  $self->{_txn_lock}        = 0;
-  $self->{_channels}        = {};
-  $self->{_channel_cnt}     = 0;
-  $self->{_pchannel_cnt}    = 0;
-  $self->{_reconnect_timer} = undef;
+  $self->{_handle}           = undef;
+  $self->{_connected}        = 0;
+  $self->{_lazy_conn_state}  = $params{lazy};
+  $self->{_auth_state}       = S_NEED_PERFORM;
+  $self->{_select_state}     = S_NEED_PERFORM;
+  $self->{_ready}            = 0;
+  $self->{_input_queue}      = [];
+  $self->{_temp_queue}       = [];
+  $self->{_processing_queue} = [];
+  $self->{_txn_lock}         = 0;
+  $self->{_channels}         = {};
+  $self->{_channel_cnt}      = 0;
+  $self->{_pchannel_cnt}     = 0;
+  $self->{_reconnect_timer}  = undef;
 
   unless ( $self->{_lazy_conn_state} ) {
     $self->_connect;
@@ -489,7 +489,7 @@ sub _get_on_rtimeout {
   weaken($self);
 
   return sub {
-    if ( @{ $self->{_process_queue} } ) {
+    if ( @{ $self->{_processing_queue} } ) {
       my $err = AnyEvent::RipeRedis::Error->new( 'Read timed out.',
           E_READ_TIMEDOUT );
 
@@ -766,12 +766,12 @@ sub _push_write {
 
   my $handle = $self->{_handle};
 
-  if ( defined $self->{read_timeout} && !@{ $self->{_process_queue} } ) {
+  if ( defined $self->{read_timeout} && !@{ $self->{_processing_queue} } ) {
     $handle->rtimeout_reset;
     $handle->rtimeout( $self->{read_timeout} );
   }
 
-  push( @{ $self->{_process_queue} }, $cmd );
+  push( @{ $self->{_processing_queue} }, $cmd );
   $handle->push_write($cmd_str);
 
   return;
@@ -848,10 +848,10 @@ sub _select_database {
 sub _flush_input_queue {
   my $self = shift;
 
-  $self->{_tmp_queue}   = $self->{_input_queue};
+  $self->{_temp_queue}  = $self->{_input_queue};
   $self->{_input_queue} = [];
 
-  while ( my $cmd = shift @{ $self->{_tmp_queue} } ) {
+  while ( my $cmd = shift @{ $self->{_temp_queue} } ) {
     $self->_push_write($cmd);
   }
 
@@ -883,7 +883,7 @@ sub _process_error {
   my $reply    = shift;
   my $err_code = shift;
 
-  my $cmd = shift @{ $self->{_process_queue} };
+  my $cmd = shift @{ $self->{_processing_queue} };
 
   unless ( defined $cmd ) {
     my $err = AnyEvent::RipeRedis::Error->new(
@@ -945,7 +945,7 @@ sub _process_success {
   my $self  = shift;
   my $reply = shift;
 
-  my $cmd = $self->{_process_queue}[0];
+  my $cmd = $self->{_processing_queue}[0];
 
   unless ( defined $cmd ) {
     my $err = AnyEvent::RipeRedis::Error->new(
@@ -987,7 +987,7 @@ sub _process_success {
   }
 
   if ( !defined $cmd->{reply_cnt} || --$cmd->{reply_cnt} == 0 ) {
-    shift @{ $self->{_process_queue} };
+    shift @{ $self->{_processing_queue} };
     $cmd->{on_reply}->($reply);
   }
 
@@ -1024,18 +1024,18 @@ sub _abort {
   my $err  = shift;
 
   my @unfin_cmds = (
-    @{ $self->{_process_queue} },
-    @{ $self->{_tmp_queue} },
+    @{ $self->{_processing_queue} },
+    @{ $self->{_temp_queue} },
     @{ $self->{_input_queue} },
   );
   my %channels = %{ $self->{_channels} };
 
-  $self->{_input_queue}   = [];
-  $self->{_tmp_queue}     = [];
-  $self->{_process_queue} = [];
-  $self->{_channels}      = {};
-  $self->{_channel_cnt}   = 0;
-  $self->{_pchannel_cnt}  = 0;
+  $self->{_input_queue}      = [];
+  $self->{_temp_queue}       = [];
+  $self->{_processing_queue} = [];
+  $self->{_channels}         = {};
+  $self->{_channel_cnt}      = 0;
+  $self->{_pchannel_cnt}     = 0;
 
   if ( !defined $err && @unfin_cmds ) {
     $err = AnyEvent::RipeRedis::Error->new(
@@ -1102,8 +1102,8 @@ sub DESTROY {
 
   if ( defined $self->{_handle} ) {
     my @unfin_cmds = (
-      @{ $self->{_process_queue} },
-      @{ $self->{_tmp_queue} },
+      @{ $self->{_processing_queue} },
+      @{ $self->{_temp_queue} },
       @{ $self->{_input_queue} },
     );
 
