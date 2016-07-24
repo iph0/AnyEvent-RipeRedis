@@ -1280,8 +1280,7 @@ Enabled by default.
 =item min_reconnect_interval => $fractional_seconds
 
 If the parameter is specified, the client will try to reconnect not often than
-through this interval. Command executions between reconnections in this case
-will be suspended.
+through this interval.
 
   min_reconnect_interval => 5,
 
@@ -1289,7 +1288,8 @@ Not set by default.
 
 =item handle_params => \%params
 
-Parameters, which will be passed to L<AnyEvent::Handle> constructor.
+Parameters, which will be passed to L<AnyEvent::Handle> constructor. See the
+documentation on L<AnyEvent::Handle> for more information.
 
   handle_params => {
     linger   => 60,
@@ -1372,8 +1372,8 @@ The full list of the Redis commands can be found here: L<http://redis.io/command
         return;
       }
 
-      foreach my $val ( @{$reply}  ) {
-        print "$val\n";
+      foreach my $value ( @{$reply}  ) {
+        print "$value\n";
       }
     }
   );
@@ -1624,8 +1624,8 @@ instead.
         return;
       }
 
-      foreach my $val ( @{$reply}  ) {
-        print "$val\n";
+      foreach my $value ( @{$reply}  ) {
+        print "$value\n";
       }
     }
   );

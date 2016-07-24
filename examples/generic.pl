@@ -94,8 +94,8 @@ $redis->lrange( 'list', 0, -1,
       return;
     }
 
-    foreach my $val ( @{$reply} ) {
-      print "$val\n";
+    foreach my $value ( @{$reply} ) {
+      print "$value\n";
     }
   }
 );
@@ -165,8 +165,8 @@ $redis->exec(
 
     foreach my $reply ( @{$replies} ) {
       if ( ref( $reply ) eq 'ARRAY' ) {
-        foreach my $val ( @{$reply} ) {
-          print "$val\n";
+        foreach my $value ( @{$reply} ) {
+          print "$value\n";
         }
       }
       else {
