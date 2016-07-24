@@ -1889,7 +1889,7 @@ Get or set the C<on_error> callback.
 
 =head1 SEE ALSO
 
-L<AnyEvent>, L<AnyEvent::Redis>, L<Redis>, L<Redis::hiredis>, L<RedisDB>
+L<AnyEvent>, L<Redis::hiredis>, L<Redis>, L<RedisDB>
 
 =head1 AUTHOR
 
