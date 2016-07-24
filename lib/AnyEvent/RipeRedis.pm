@@ -1412,7 +1412,7 @@ objects for every failed command.
 
         if ( defined $reply ) {
           foreach my $nested_reply ( @{$reply} ) {
-            if ( ref($reply) eq 'AnyEvent::RipeRedis::Error' ) {
+            if ( ref($nested_reply) eq 'AnyEvent::RipeRedis::Error' ) {
               my $nested_err_msg  = $nested_reply->message();
               my $nested_err_code = $nested_reply->code();
 
@@ -1648,7 +1648,7 @@ will be contain nested error objects.
 
         if ( defined $reply ) {
           foreach my $nested_reply ( @{$reply} ) {
-            if ( ref($reply) eq 'AnyEvent::RipeRedis::Error' ) {
+            if ( ref($nested_reply) eq 'AnyEvent::RipeRedis::Error' ) {
               my $nested_err_msg  = $nested_reply->message();
               my $nested_err_code = $nested_reply->code();
 
