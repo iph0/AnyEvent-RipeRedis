@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.01_03';
+our $VERSION = '0.01_04';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1461,10 +1461,10 @@ Subscribes the client to the specified channels. Method can accept two
 callbacks: C<on_reply> and C<on_message>. The C<on_reply> callback is called
 once when subscription to all specified channels will be activated. In first
 argument to the callback is passed the number of channels we are currently
-subscribed. If error occurred during subscription operation or subscription to
-specified channels was lost, to the C<on_reply> callback will be passed error
-objec. The C<on_message> callback is called on every published message. If
-method is called with one callback, it will be act as C<on_message> callback.
+subscribed. If subscription to specified channels was lost, the C<on_reply>
+callback is called with the error object in the second argument. The
+C<on_message> callback is called on every published message. If method is
+called with one callback, it will be act as C<on_message> callback.
 
   $redis->subscribe( qw( foo bar ),
     { on_reply => sub {
@@ -1477,7 +1477,7 @@ method is called with one callback, it will be act as C<on_message> callback.
           return;
         }
 
-        # handling...
+        # reply handling...
       },
 
       on_message => sub {
