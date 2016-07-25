@@ -1288,8 +1288,7 @@ Not set by default.
 
 =item handle_params => \%params
 
-Parameters, which will be passed to L<AnyEvent::Handle> constructor. See the
-documentation on L<AnyEvent::Handle> for more information.
+Specifies L<AnyEvent::Handle> parameters.
 
   handle_params => {
     linger   => 60,
