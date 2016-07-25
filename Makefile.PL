@@ -8,7 +8,6 @@ WriteMakefile(
   MIN_PERL_VERSION => '5.008000',
   PREREQ_PM        => {
     'AnyEvent'     => '6.01',
-    'Encode'       => '0',
     'Scalar::Util' => '0',
     'Digest::SHA'  => '0',
     'Carp'         => '0',
