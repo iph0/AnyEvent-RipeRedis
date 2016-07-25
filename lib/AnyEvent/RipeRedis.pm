@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.01_04';
+our $VERSION = '0.02';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1291,8 +1291,8 @@ Not set by default.
 Specifies L<AnyEvent::Handle> parameters.
 
   handle_params => {
-    linger   => 60,
     autocork => 1,
+    linger   => 60,
   }
 
 =item on_connect => $cb->()
