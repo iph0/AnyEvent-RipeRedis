@@ -1849,7 +1849,7 @@ Selects the database by numeric index.
 
 Get selected database index.
 
-=head2 utf8()
+=head2 utf8( [ $boolean ] )
 
 Enables or disables UTF-8 mode.
 
