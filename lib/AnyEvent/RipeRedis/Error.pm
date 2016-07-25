@@ -4,6 +4,8 @@ use 5.008000;
 use strict;
 use warnings;
 
+our $VERSION = '0.03_01';
+
 
 sub new {
   my $class    = shift;

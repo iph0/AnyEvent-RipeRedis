@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03_01';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -120,8 +120,9 @@ sub new {
   $self->{password} = $params{password};
   $self->{database}
       = defined $params{database} ? $params{database} : D_DB_INDEX;
+  $self->{utf8}      = exists $params{utf8}      ? $params{utf8}      : 1;
   $self->{reconnect} = exists $params{reconnect} ? $params{reconnect} : 1;
-  $self->{utf8}      = exists $params{utf8} ? $params{utf8} : 1;
+  $self->{handle_params}    = $params{handle_params} || {};
   $self->{on_connect}       = $params{on_connect};
   $self->{on_disconnect}    = $params{on_disconnect};
   $self->{on_connect_error} = $params{on_connect_error};
@@ -131,19 +132,11 @@ sub new {
   $self->min_reconnect_interval( $params{min_reconnect_interval} );
   $self->on_error( $params{on_error} );
 
-  my $hdl_params = $params{handle_params} || {};
-  foreach my $name ( qw( linger autocork ) ) {
-    if ( !exists $hdl_params->{$name} && defined $params{$name} ) {
-      $hdl_params->{$name} = $params{$name};
-    }
-  }
-  $self->{handle_params} = $hdl_params;
-
   $self->{_handle}           = undef;
   $self->{_connected}        = 0;
   $self->{_lazy_conn_state}  = $params{lazy};
   $self->{_auth_state}       = S_NEED_PERFORM;
-  $self->{_select_state}     = S_NEED_PERFORM;
+  $self->{_select_db_state}  = S_NEED_PERFORM;
   $self->{_ready}            = 0;
   $self->{_input_queue}      = [];
   $self->{_temp_queue}       = [];
@@ -166,7 +159,6 @@ sub info {
   my $cmd  = $self->_prepare_command( 'info', [@_] );
 
   weaken($self);
-
   my $on_reply = $cmd->{on_reply};
 
   $cmd->{on_reply} = sub {
@@ -241,11 +233,40 @@ sub eval_cached {
   my $self = shift;
   my $cmd  = $self->_prepare_command( 'evalsha', [@_] );
 
-  $cmd->{script} = $cmd->{args}[0];
-  unless ( exists $EVAL_CACHE{ $cmd->{script} } ) {
-    $EVAL_CACHE{ $cmd->{script} } = sha1_hex( $cmd->{script} );
+  my $script = $cmd->{args}[0];
+  unless ( exists $EVAL_CACHE{$script} ) {
+    $EVAL_CACHE{$script} = sha1_hex($script);
   }
-  $cmd->{args}[0] = $EVAL_CACHE{ $cmd->{script} };
+  $cmd->{args}[0] = $EVAL_CACHE{$script};
+
+  {
+    weaken($self);
+    weaken( my $cmd = $cmd );
+
+    my $on_reply = $cmd->{on_reply};
+
+    $cmd->{on_reply} = sub {
+      my $reply = shift;
+      my $err   = shift;
+
+      if ( defined $err ) {
+        if ( $err->code == E_NO_SCRIPT ) {
+          $cmd->{kwd}     = 'eval';
+          $cmd->{args}[0] = $script;
+
+          $self->_push_write($cmd);
+
+          return;
+        }
+
+        $on_reply->( undef, $err );
+
+        return;
+      }
+
+      $on_reply->($reply);
+    };
+  }
 
   $self->_execute_command($cmd);
 
@@ -257,7 +278,6 @@ sub quit {
   my $cmd  = $self->_prepare_command( 'quit', [@_] );
 
   weaken($self);
-
   my $on_reply = $cmd->{on_reply};
 
   $cmd->{on_reply} = sub {
@@ -346,7 +366,7 @@ sub selected_database {
 sub on_error {
   my $self = shift;
 
-  if ( @_ ) {
+  if (@_) {
     my $on_error = shift;
 
     if ( defined $on_error ) {
@@ -447,13 +467,13 @@ sub _get_on_connect {
       $self->{_auth_state} = S_DONE;
     }
     if ( $self->{database} == 0 ) {
-      $self->{_select_state} = S_DONE;
+      $self->{_select_db_state} = S_DONE;
     }
 
     if ( $self->{_auth_state} == S_NEED_PERFORM ) {
       $self->_auth;
     }
-    elsif ( $self->{_select_state} == S_NEED_PERFORM ) {
+    elsif ( $self->{_select_db_state} == S_NEED_PERFORM ) {
       $self->_select_database;
     }
     else {
@@ -649,8 +669,6 @@ sub _prepare_command {
   my $kwd  = shift;
   my $args = shift;
 
-  weaken($self);
-
   my $cmd;
   if ( ref( $args->[-1] ) eq 'HASH' ) {
     $cmd = pop @{$args};
@@ -670,6 +688,8 @@ sub _prepare_command {
   $cmd->{args} = $args;
 
   unless ( defined $cmd->{on_reply} ) {
+    weaken($self);
+
     $cmd->{on_reply} = sub {
       my $reply = shift;
       my $err   = shift;
@@ -692,7 +712,7 @@ sub _execute_command {
     if ( defined $self->{_handle} ) {
       if ( $self->{_connected} ) {
         if ( $self->{_auth_state} == S_DONE ) {
-          if ( $self->{_select_state} == S_NEED_PERFORM ) {
+          if ( $self->{_select_db_state} == S_NEED_PERFORM ) {
             $self->_select_database;
           }
         }
@@ -781,7 +801,6 @@ sub _auth {
   my $self = shift;
 
   weaken($self);
-
   $self->{_auth_state} = S_IN_PROGRESS;
 
   $self->_push_write(
@@ -800,7 +819,7 @@ sub _auth {
 
         $self->{_auth_state} = S_DONE;
 
-        if ( $self->{_select_state} == S_NEED_PERFORM ) {
+        if ( $self->{_select_db_state} == S_NEED_PERFORM ) {
           $self->_select_database;
         }
         else {
@@ -818,8 +837,7 @@ sub _select_database {
   my $self = shift;
 
   weaken($self);
-
-  $self->{_select_state} = S_IN_PROGRESS;
+  $self->{_select_db_state} = S_IN_PROGRESS;
 
   $self->_push_write(
     { kwd  => 'select',
@@ -829,14 +847,15 @@ sub _select_database {
         my $err = $_[1];
 
         if ( defined $err ) {
-          $self->{_select_state} = S_NEED_PERFORM;
+          $self->{_select_db_state} = S_NEED_PERFORM;
           $self->_abort($err);
 
           return;
         }
 
-        $self->{_select_state} = S_DONE;
-        $self->{_ready}        = 1;
+        $self->{_select_db_state} = S_DONE;
+        $self->{_ready}           = 1;
+
         $self->_flush_input_queue;
       },
     }
@@ -891,15 +910,6 @@ sub _process_error {
         E_UNEXPECTED_DATA );
 
     $self->_disconnect($err);
-
-    return;
-  }
-
-  if ( $err_code == E_NO_SCRIPT && defined $cmd->{script} ) {
-    $cmd->{kwd} = 'eval';
-    $cmd->{args}[0] = delete $cmd->{script};
-
-    $self->_push_write($cmd);
 
     return;
   }
@@ -1004,11 +1014,11 @@ sub _disconnect {
     $self->{_handle}->destroy;
     undef $self->{_handle};
   }
-  $self->{_connected}    = 0;
-  $self->{_auth_state}   = S_NEED_PERFORM;
-  $self->{_select_state} = S_NEED_PERFORM;
-  $self->{_ready}        = 0;
-  $self->{_txn_lock}     = 0;
+  $self->{_connected}       = 0;
+  $self->{_auth_state}      = S_NEED_PERFORM;
+  $self->{_select_db_state} = S_NEED_PERFORM;
+  $self->{_ready}           = 0;
+  $self->{_txn_lock}        = 0;
 
   $self->_abort($err);
 
