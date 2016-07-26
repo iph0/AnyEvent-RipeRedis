@@ -1129,7 +1129,7 @@ sub DESTROY {
     );
 
     foreach my $cmd ( @unfin_cmds ) {
-      warn "Operation \"$cmd->{kwd}\" aborted:"
+      warn qq{Operation "$cmd->{kwd}" aborted:}
           . " Client object destroyed prematurely.\n";
     }
   }
