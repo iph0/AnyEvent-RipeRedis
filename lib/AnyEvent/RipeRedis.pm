@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.03_04';
+our $VERSION = '0.03_05';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -325,7 +325,7 @@ sub disconnect {
       if ( $self->{_txn_lock} ) {
         AE::postpone(
           sub {
-            my $err = AnyEvent::RipeRedis::Error->new(
+            my $err = _new_error(
               qq{Command "$cmd->{kwd}" not allowed after "multi" command.}
                   . ' First, the transaction must be finalized.',
               E_OPRN_ERROR
@@ -496,7 +496,7 @@ sub _get_on_connect_error {
   return sub {
     my $err_msg = pop;
 
-    my $err = AnyEvent::RipeRedis::Error->new(
+    my $err = _new_error(
       "Can't connect to $self->{host}:$self->{port}: $err_msg",
       E_CANT_CONN
     );
@@ -512,8 +512,7 @@ sub _get_on_rtimeout {
 
   return sub {
     if ( @{ $self->{_processing_queue} } ) {
-      my $err = AnyEvent::RipeRedis::Error->new( 'Read timed out.',
-          E_READ_TIMEDOUT );
+      my $err = _new_error( 'Read timed out.', E_READ_TIMEDOUT );
 
       $self->_disconnect($err);
     }
@@ -529,10 +528,8 @@ sub _get_on_eof {
   weaken($self);
 
   return sub {
-    my $err = AnyEvent::RipeRedis::Error->new(
-      'Connection closed by remote host.',
-      E_CONN_CLOSED_BY_REMOTE_HOST
-    );
+    my $err = _new_error( 'Connection closed by remote host.',
+        E_CONN_CLOSED_BY_REMOTE_HOST );
 
     $self->_disconnect($err);
   };
@@ -546,7 +543,7 @@ sub _get_handle_on_error {
   return sub {
     my $err_msg = pop;
 
-    my $err = AnyEvent::RipeRedis::Error->new( $err_msg, E_IO );
+    my $err = _new_error( $err_msg, E_IO );
     $self->_disconnect($err);
   };
 }
@@ -632,10 +629,8 @@ sub _get_on_read {
             }
           }
           else {
-            my $err = AnyEvent::RipeRedis::Error->new(
-              'Unexpected reply received.',
-              E_UNEXPECTED_DATA
-            );
+            my $err = _new_error( 'Unexpected reply received.',
+                E_UNEXPECTED_DATA );
 
             $self->_disconnect($err);
 
@@ -648,7 +643,7 @@ sub _get_on_read {
         my $curr_buf = $bufs[-1];
         if ( defined $err_code ) {
           unless ( ref($reply) ) {
-            $reply = AnyEvent::RipeRedis::Error->new( $reply, $err_code );
+            $reply = _new_error( $reply, $err_code );
           }
           $curr_buf->{err_code} = E_OPRN_ERROR;
         }
@@ -752,7 +747,7 @@ sub _execute_command {
     else {
       AE::postpone(
         sub {
-          my $err = AnyEvent::RipeRedis::Error->new(
+          my $err = _new_error(
             qq{Operation "$cmd->{kwd}" aborted: No connection to the server.},
             E_NO_CONN
           );
@@ -911,7 +906,7 @@ sub _process_error {
   my $cmd = shift @{ $self->{_processing_queue} };
 
   unless ( defined $cmd ) {
-    my $err = AnyEvent::RipeRedis::Error->new(
+    my $err = _new_error(
       q{Don't know how process error message. Processing queue is empty.},
       E_UNEXPECTED_DATA
     );
@@ -922,13 +917,13 @@ sub _process_error {
   }
 
   if ( ref($reply) ) {
-    my $err = AnyEvent::RipeRedis::Error->new(
+    my $err = _new_error(
         qq{Operation "$cmd->{kwd}" completed with errors.}, $err_code );
 
     $cmd->{on_reply}->( $reply, $err );
   }
   else {
-    my $err = AnyEvent::RipeRedis::Error->new( $reply, $err_code );
+    my $err = _new_error( $reply, $err_code );
     $cmd->{on_reply}->( undef, $err );
   }
 
@@ -942,7 +937,7 @@ sub _process_message {
   my $cmd = $self->{_channels}{ $msg->[1] };
 
   unless ( defined $cmd ) {
-    my $err = AnyEvent::RipeRedis::Error->new(
+    my $err = _new_error(
       q{Don't know how process published message.}
           . qq{ Unknown channel or pattern "$msg->[1]".},
       E_UNEXPECTED_DATA
@@ -966,7 +961,7 @@ sub _process_success {
   my $cmd = $self->{_processing_queue}[0];
 
   unless ( defined $cmd ) {
-    my $err = AnyEvent::RipeRedis::Error->new(
+    my $err = _new_error(
       q{Don't know how process reply. Processing queue is empty.},
       E_UNEXPECTED_DATA
     );
@@ -1057,10 +1052,8 @@ sub _abort {
   $self->{_pchannel_cnt}     = 0;
 
   if ( !defined $err && @unfin_cmds ) {
-    $err = AnyEvent::RipeRedis::Error->new(
-      'Connection closed by client prematurely.',
-      E_CONN_CLOSED_BY_CLIENT
-    );
+    $err = _new_error( 'Connection closed by client prematurely.',
+        E_CONN_CLOSED_BY_CLIENT );
   }
 
   if ( defined $err ) {
@@ -1076,8 +1069,10 @@ sub _abort {
 
     if ( %channels && $err_code != E_CONN_CLOSED_BY_CLIENT ) {
       foreach my $name ( keys %channels ) {
-        my $err = AnyEvent::RipeRedis::Error->new(
-            qq{Subscription to channel "$name" lost: $err_msg}, $err_code );
+        my $err = _new_error(
+          qq{Subscription to channel "$name" lost: $err_msg},
+          $err_code
+        );
 
         my $cmd = $channels{$name};
         $cmd->{on_reply}->( undef, $err );
@@ -1085,14 +1080,18 @@ sub _abort {
     }
 
     foreach my $cmd (@unfin_cmds) {
-      my $err = AnyEvent::RipeRedis::Error->new(
-          qq{Operation "$cmd->{kwd}" aborted: $err_msg}, $err_code );
+      my $err = _new_error( qq{Operation "$cmd->{kwd}" aborted: $err_msg},
+          $err_code );
 
       $cmd->{on_reply}->( undef, $err );
     }
   }
 
   return;
+}
+
+sub _new_error {
+  return AnyEvent::RipeRedis::Error->new(@_);
 }
 
 sub AUTOLOAD {
@@ -1256,12 +1255,10 @@ Enabled by default.
 
 =item connection_timeout => $fractional_seconds
 
-Timeout, within which the client will be wait the connection establishment to
-the Redis server. If the client could not connect to the server after specified
-timeout, the C<on_error> or C<on_connect_error> callback is called. In case
-when C<on_error> callback is called, C<E_CANT_CONN> error code is passed to
-callback in the second argument. The timeout specifies in seconds and can
-contain a fractional part.
+Specifies connection timeout. If the client could not connect to the server
+after specified timeout, the C<on_connect_error> callback is called with the
+C<E_CANT_CONN> error, or if it not specified, the C<on_error> callback is
+called. The timeout specifies in seconds and can contain a fractional part.
 
   connection_timeout => 10.5,
 
@@ -1269,10 +1266,9 @@ By default the client use kernel's connection timeout.
 
 =item read_timeout => $fractional_seconds
 
-Timeout, within which the client will be wait a response on a command from the
-Redis server. If the client could not receive a response from the server after
-specified timeout, the client close connection and call C<on_error> callback
-with the C<E_READ_TIMEDOUT> error code. The timeout is specifies in seconds
+Specifies read timeout. If the client could not receive a reply from the server
+after specified timeout, the client close connection and call the C<on_error>
+callback with the C<E_READ_TIMEDOUT> error. The timeout is specifies in seconds
 and can contain a fractional part.
 
   read_timeout => 3.5,
@@ -1300,8 +1296,8 @@ Enabled by default.
 
 =item min_reconnect_interval => $fractional_seconds
 
-If the parameter is specified, the client will try to reconnect not often than
-through this interval.
+If the parameter is specified, the client will try to reconnect not often, than
+after this interval.
 
   min_reconnect_interval => 5,
 
@@ -1309,7 +1305,8 @@ Not set by default.
 
 =item handle_params => \%params
 
-Specifies L<AnyEvent::Handle> parameters.
+Specifies L<AnyEvent::Handle> parameters. Enabling of the C<autocork> parameter
+can improve perfomance.
 
   handle_params => {
     autocork => 1,
@@ -1341,10 +1338,10 @@ Not set by default.
 =item on_error => $cb->( $err )
 
 The C<on_error> callback is called when occurred an error, which was affected
-on entire client (e. g. connection error or authentication error). Also the
-C<on_error> callback is called on command errors if command callback is not
-specified. If C<on_error> callback is not specified, the client just print an
-error messages to C<STDERR>.
+on whole client (e. g. connection error or authentication error). Also the
+C<on_error> callback is called on command errors if the command callback is not
+specified. If the C<on_error> callback is not specified, the client just print
+an error messages to C<STDERR>.
 
 =back
 
