@@ -36,7 +36,7 @@ my $ver = get_redis_version( $REDIS );
 
 SKIP: {
   if ( $ver < version->parse( 'v2.6' ) ) {
-    skip 'redis-server 2.6 or higher is required for this test', 2;
+    skip 'redis-server 2.6 or higher is required for this test', 1;
   }
 
   t_leaks_eval_cached($REDIS);
