@@ -4,7 +4,7 @@ use 5.008000;
 use strict;
 use warnings;
 
-our $VERSION = '0.03_05';
+our $VERSION = '0.03_06';
 
 
 sub new {
