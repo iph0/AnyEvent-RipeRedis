@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.03_03';
+our $VERSION = '0.03_04';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -166,7 +166,7 @@ sub info {
     my $err   = shift;
 
     if ( defined $err ) {
-      $on_reply->( undef, $err );
+      $on_reply->( $reply, $err );
       return;
     }
 
@@ -195,7 +195,7 @@ sub select {
     my $err   = shift;
 
     if ( defined $err ) {
-      $on_reply->( undef, $err );
+      $on_reply->( $reply, $err );
       return;
     }
 
@@ -259,7 +259,7 @@ sub eval_cached {
           return;
         }
 
-        $on_reply->( undef, $err );
+        $on_reply->( $reply, $err );
 
         return;
       }
@@ -285,7 +285,7 @@ sub quit {
     my $err   = shift;
 
     if ( defined $err ) {
-      $on_reply->( undef, $err );
+      $on_reply->( $reply, $err );
       return;
     }
 

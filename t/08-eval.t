@@ -216,7 +216,7 @@ sub t_errors_in_mbulk_reply {
     sub {
       my $cv = shift;
 
-      $redis->eval( $script, 0, 42,
+      $redis->eval_cached( $script, 0, 42,
         sub {
           $t_reply = shift;
           $t_err   = shift;
