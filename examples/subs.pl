@@ -22,8 +22,11 @@ my $redis = AnyEvent::RipeRedis->new(
   },
 );
 
+my @channels = qw( foo bar );
+my @patterns = qw( info_* err_* );
+
 # Subscribe to channels by name
-$redis->subscribe( qw( foo bar ),
+$redis->subscribe( @channels,
   { on_reply => sub {
       my $reply = shift;
       my $err   = shift;
@@ -33,7 +36,7 @@ $redis->subscribe( qw( foo bar ),
         return;
       };
 
-      print "Subscribed on: foo, bar\n";
+      print 'Subscribed on: ' . join( ', ', @channels ). "\n";
     },
 
     on_message => sub {
@@ -46,7 +49,7 @@ $redis->subscribe( qw( foo bar ),
 );
 
 # Subscribe to channels by pattern
-$redis->psubscribe( qw( info_* err_* ),
+$redis->psubscribe( @patterns,
   { on_reply => sub {
       my $reply = shift;
       my $err   = shift;
@@ -56,7 +59,7 @@ $redis->psubscribe( qw( info_* err_* ),
         return;
       };
 
-      print "Subscribed on: info_*, err_*\n";
+      print 'Subscribed on: ' . join( ', ', @patterns ). "\n";
     },
 
     on_message => sub {
@@ -73,7 +76,7 @@ $redis->psubscribe( qw( info_* err_* ),
 my $on_signal = sub {
   print "Stopped\n";
 
-  $redis->unsubscribe( qw( foo bar ),
+  $redis->unsubscribe( @channels,
     sub {
       my $msg = shift;
       my $err = shift;
@@ -83,11 +86,11 @@ my $on_signal = sub {
         return;
       };
 
-      print "Unsubscribed from: foo, bar\n";
+      print 'Unsubscribed from: ' . join( ', ', @channels ). "\n";
     }
   );
 
-  $redis->punsubscribe( qw( info_* err_* ),
+  $redis->punsubscribe( @patterns,
     sub {
       my $msg = shift;
       my $err = shift;
@@ -97,7 +100,7 @@ my $on_signal = sub {
         return;
       };
 
-      print "Unsubscribed from: info_*, err_*\n";
+      print 'Unsubscribed from: ' . join( ', ', @patterns ). "\n";
 
       $cv->send;
     }
