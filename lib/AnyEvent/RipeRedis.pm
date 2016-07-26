@@ -326,9 +326,10 @@ sub disconnect {
         AE::postpone(
           sub {
             my $err = AnyEvent::RipeRedis::Error->new(
-                qq{Command "$cmd->{kwd}" not allowed after "multi" command.}
-                    . ' First, the transaction must be finalized.',
-                E_OPRN_ERROR );
+              qq{Command "$cmd->{kwd}" not allowed after "multi" command.}
+                  . ' First, the transaction must be finalized.',
+              E_OPRN_ERROR
+            );
 
             $cmd->{on_reply}->( undef, $err );
           }
@@ -496,8 +497,9 @@ sub _get_on_connect_error {
     my $err_msg = pop;
 
     my $err = AnyEvent::RipeRedis::Error->new(
-        "Can't connect to $self->{host}:$self->{port}: $err_msg",
-        E_CANT_CONN );
+      "Can't connect to $self->{host}:$self->{port}: $err_msg",
+      E_CANT_CONN,
+    );
 
     $self->_disconnect($err);
   };
@@ -528,7 +530,9 @@ sub _get_on_eof {
 
   return sub {
     my $err = AnyEvent::RipeRedis::Error->new(
-        'Connection closed by remote host.', E_CONN_CLOSED_BY_REMOTE_HOST );
+      'Connection closed by remote host.',
+      E_CONN_CLOSED_BY_REMOTE_HOST,
+    );
 
     $self->_disconnect($err);
   };
@@ -629,7 +633,9 @@ sub _get_on_read {
           }
           else {
             my $err = AnyEvent::RipeRedis::Error->new(
-                'Unexpected reply received.', E_UNEXPECTED_DATA );
+              'Unexpected reply received.',
+              E_UNEXPECTED_DATA,
+            );
 
             $self->_disconnect($err);
 
@@ -747,9 +753,10 @@ sub _execute_command {
       AE::postpone(
         sub {
           my $err = AnyEvent::RipeRedis::Error->new(
-              qq{Operation "$cmd->{kwd}" aborted:}
-                  .' No connection to the server.',
-              E_NO_CONN );
+            qq{Operation "$cmd->{kwd}" aborted:}
+                . ' No connection to the server.',
+            E_NO_CONN
+          );
 
           $cmd->{on_reply}->( undef, $err );
         }
@@ -906,8 +913,9 @@ sub _process_error {
 
   unless ( defined $cmd ) {
     my $err = AnyEvent::RipeRedis::Error->new(
-        "Don't know how process error message. Processing queue is empty.",
-        E_UNEXPECTED_DATA );
+      "Don't know how process error message. Processing queue is empty.",
+      E_UNEXPECTED_DATA,
+    );
 
     $self->_disconnect($err);
 
@@ -936,9 +944,10 @@ sub _process_message {
 
   unless ( defined $cmd ) {
     my $err = AnyEvent::RipeRedis::Error->new(
-        q{Don't know how process published message.}
-            . qq{ Unknown channel or pattern "$msg->[1]".},
-        E_UNEXPECTED_DATA );
+      q{Don't know how process published message.}
+          . qq{ Unknown channel or pattern "$msg->[1]".},
+      E_UNEXPECTED_DATA
+    );
 
     $self->_disconnect($err);
 
@@ -959,8 +968,9 @@ sub _process_success {
 
   unless ( defined $cmd ) {
     my $err = AnyEvent::RipeRedis::Error->new(
-        "Don't know how process reply. Processing queue is empty.",
-        E_UNEXPECTED_DATA );
+      "Don't know how process reply. Processing queue is empty.",
+      E_UNEXPECTED_DATA,
+    );
 
     $self->_disconnect($err);
 
@@ -1049,7 +1059,9 @@ sub _abort {
 
   if ( !defined $err && @unfin_cmds ) {
     $err = AnyEvent::RipeRedis::Error->new(
-        'Connection closed by client prematurely.', E_CONN_CLOSED_BY_CLIENT );
+      'Connection closed by client prematurely.',
+      E_CONN_CLOSED_BY_CLIENT,
+    );
   }
 
   if ( defined $err ) {
