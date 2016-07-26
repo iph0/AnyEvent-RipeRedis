@@ -498,7 +498,7 @@ sub _get_on_connect_error {
 
     my $err = AnyEvent::RipeRedis::Error->new(
       "Can't connect to $self->{host}:$self->{port}: $err_msg",
-      E_CANT_CONN,
+      E_CANT_CONN
     );
 
     $self->_disconnect($err);
@@ -531,7 +531,7 @@ sub _get_on_eof {
   return sub {
     my $err = AnyEvent::RipeRedis::Error->new(
       'Connection closed by remote host.',
-      E_CONN_CLOSED_BY_REMOTE_HOST,
+      E_CONN_CLOSED_BY_REMOTE_HOST
     );
 
     $self->_disconnect($err);
@@ -634,7 +634,7 @@ sub _get_on_read {
           else {
             my $err = AnyEvent::RipeRedis::Error->new(
               'Unexpected reply received.',
-              E_UNEXPECTED_DATA,
+              E_UNEXPECTED_DATA
             );
 
             $self->_disconnect($err);
@@ -753,8 +753,7 @@ sub _execute_command {
       AE::postpone(
         sub {
           my $err = AnyEvent::RipeRedis::Error->new(
-            qq{Operation "$cmd->{kwd}" aborted:}
-                . ' No connection to the server.',
+            qq{Operation "$cmd->{kwd}" aborted: No connection to the server.},
             E_NO_CONN
           );
 
@@ -913,8 +912,8 @@ sub _process_error {
 
   unless ( defined $cmd ) {
     my $err = AnyEvent::RipeRedis::Error->new(
-      "Don't know how process error message. Processing queue is empty.",
-      E_UNEXPECTED_DATA,
+      q{Don't know how process error message. Processing queue is empty.},
+      E_UNEXPECTED_DATA
     );
 
     $self->_disconnect($err);
@@ -968,8 +967,8 @@ sub _process_success {
 
   unless ( defined $cmd ) {
     my $err = AnyEvent::RipeRedis::Error->new(
-      "Don't know how process reply. Processing queue is empty.",
-      E_UNEXPECTED_DATA,
+      q{Don't know how process reply. Processing queue is empty.},
+      E_UNEXPECTED_DATA
     );
 
     $self->_disconnect($err);
@@ -1060,7 +1059,7 @@ sub _abort {
   if ( !defined $err && @unfin_cmds ) {
     $err = AnyEvent::RipeRedis::Error->new(
       'Connection closed by client prematurely.',
-      E_CONN_CLOSED_BY_CLIENT,
+      E_CONN_CLOSED_BY_CLIENT
     );
   }
 
