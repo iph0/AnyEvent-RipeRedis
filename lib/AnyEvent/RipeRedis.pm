@@ -1239,10 +1239,10 @@ after connection.
 
 =item database => $index
 
-Database index. If the index is specified, the client is switched to
-the specified database after connection. You can also switch to another database
-after connection by using C<SELECT> command. The client remembers last selected
-database after reconnection.
+Database index. If the index is specified, the client switches to the specified
+database after connection. You can also switch to another database after
+connection by using C<SELECT> command. The client remembers last selected
+database after reconnection and switches to it automaticaly.
 
 The default database index is C<0>.
 
@@ -1426,9 +1426,9 @@ Executes all previously queued commands in a transaction and restores the
 connection state to normal. When using C<WATCH>, C<EXEC> will execute commands
 only if the watched keys were not modified.
 
-If during a transaction at least one command fails, to the callback of C<exec()>
-method will be passed error object and the reply will be contain nested error
-objects for every failed command.
+If during a transaction at least one command fails, to the callback will be
+passed error object, and the reply will be contain nested error objects for
+every failed command.
 
   $redis->multi();
   $redis->set( 'foo', 'string' );
@@ -1669,8 +1669,8 @@ Be care, passing a different Lua scripts to C<eval_cached()> method every time
 cause memory leaks.
 
 If Lua script returns multi-bulk reply with at least one error reply, to the
-callback of C<eval_cached> method will be passed error object and the reply
-will be contain nested error objects.
+callback will be passed error object, and the reply will be contain nested
+error objects.
 
   $redis->eval_cached( "return { 'foo', redis.error_reply( 'Error.' ) }", 0,
     sub {
@@ -1703,9 +1703,9 @@ will be contain nested error objects.
 
 =head1 ERROR CODES
 
-Error codes can be used for programmatic handling of errors.
-AnyEvent::RipeRedis provides constants of error codes, which can be imported
-and used in expressions.
+Every error object, passed to callback, contain error code, which can be used
+for programmatic handling of errors. AnyEvent::RipeRedis provides constants for
+error codes. They can be imported and used in expressions.
 
   use AnyEvent::RipeRedis qw( :err_codes );
 
