@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05_01';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -156,7 +156,7 @@ sub new {
 
 sub info {
   my $self = shift;
-  my $cmd  = $self->_prepare_command( 'info', [@_] );
+  my $cmd  = $self->_prepare( 'info', [@_] );
 
   weaken($self);
   my $on_reply = $cmd->{on_reply};
@@ -176,14 +176,14 @@ sub info {
     $on_reply->($reply);
   };
 
-  $self->_execute_command($cmd);
+  $self->_execute($cmd);
 
   return;
 }
 
 sub select {
   my $self = shift;
-  my $cmd  = $self->_prepare_command( 'select', [@_] );
+  my $cmd  = $self->_prepare( 'select', [@_] );
 
   weaken($self);
 
@@ -204,34 +204,34 @@ sub select {
     $on_reply->($reply);
   };
 
-  $self->_execute_command($cmd);
+  $self->_execute($cmd);
 
   return;
 }
 
 sub multi {
   my $self = shift;
-  my $cmd  = $self->_prepare_command( 'multi', [@_] );
+  my $cmd  = $self->_prepare( 'multi', [@_] );
 
   $self->{_txn_lock} = 1;
-  $self->_execute_command($cmd);
+  $self->_execute($cmd);
 
   return;
 }
 
 sub exec {
   my $self = shift;
-  my $cmd  = $self->_prepare_command( 'exec', [@_] );
+  my $cmd  = $self->_prepare( 'exec', [@_] );
 
   $self->{_txn_lock} = 0;
-  $self->_execute_command($cmd);
+  $self->_execute($cmd);
 
   return;
 }
 
 sub eval_cached {
   my $self = shift;
-  my $cmd  = $self->_prepare_command( 'evalsha', [@_] );
+  my $cmd  = $self->_prepare( 'evalsha', [@_] );
 
   my $script = $cmd->{args}[0];
   unless ( exists $EVAL_CACHE{$script} ) {
@@ -268,14 +268,14 @@ sub eval_cached {
     };
   }
 
-  $self->_execute_command($cmd);
+  $self->_execute($cmd);
 
   return;
 }
 
 sub quit {
   my $self = shift;
-  my $cmd  = $self->_prepare_command( 'quit', [@_] );
+  my $cmd  = $self->_prepare( 'quit', [@_] );
 
   weaken($self);
   my $on_reply = $cmd->{on_reply};
@@ -294,7 +294,7 @@ sub quit {
     $on_reply->($reply);
   };
 
-  $self->_execute_command($cmd);
+  $self->_execute($cmd);
 
   return;
 }
@@ -314,7 +314,7 @@ sub disconnect {
   foreach my $kwd ( keys %SUBUNSUB_COMMANDS ) {
     *{$kwd} = sub {
       my $self = shift;
-      my $cmd = $self->_prepare_command( $kwd, [@_] );
+      my $cmd = $self->_prepare( $kwd, [@_] );
 
       if ( exists $SUB_COMMANDS{ $cmd->{kwd} }
         && !defined $cmd->{on_message} )
@@ -342,7 +342,7 @@ sub disconnect {
         $cmd->{reply_cnt} = scalar @{ $cmd->{args} };
       }
 
-      $self->_execute_command($cmd);
+      $self->_execute($cmd);
 
       return;
     };
@@ -665,7 +665,7 @@ sub _get_on_read {
   };
 }
 
-sub _prepare_command {
+sub _prepare {
   my $self = shift;
   my $kwd  = shift;
   my $args = shift;
@@ -705,7 +705,7 @@ sub _prepare_command {
   return $cmd;
 }
 
-sub _execute_command {
+sub _execute {
   my $self = shift;
   my $cmd  = shift;
 
@@ -1102,9 +1102,9 @@ sub AUTOLOAD {
 
   my $sub = sub {
     my $self = shift;
-    my $cmd  = $self->_prepare_command( $kwd, [ @extra_args, @_ ] );
+    my $cmd  = $self->_prepare( $kwd, [ @extra_args, @_ ] );
 
-    $self->_execute_command($cmd);
+    $self->_execute($cmd);
 
     return;
   };
