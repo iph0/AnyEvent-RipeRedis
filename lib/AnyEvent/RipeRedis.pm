@@ -1636,7 +1636,7 @@ Redis 2.6 and higher support execution of Lua scripts on the server side.
 To execute a Lua script you can send one of the commands C<EVAL> or C<EVALSHA>,
 or use the special method C<eval_cached()>.
 
-=head2 eval_cached( $script, $numkeys [, @keys ] [, @args ] [, $cb->( $reply, $err ) ] ] );
+=head2 eval_cached( $script, $keys_num [, @keys ] [, @args ] [, $cb->( $reply, $err ) ] ] );
 
 When you call the C<eval_cached()> method, the client first generate a SHA1
 hash for a Lua script and cache it in memory. Then the client optimistically
