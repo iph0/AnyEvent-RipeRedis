@@ -1,4 +1,10 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.04 Mon Jul 27 11:41:15 MSK 2016
+  - Refactoring of eval_cached() method.
+  - POD improved.
+  - Bugfix in unit tests.
+  - Removed unused code. Cosmetic.
+
 0.02 Mon Jul 25 15:37:30 MSK 2016
   - First stable release of new incarnation of AnyEvent::Redis::RipeRedis.

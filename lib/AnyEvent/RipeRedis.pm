@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.03_06';
+our $VERSION = '0.04';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1349,17 +1349,15 @@ an error messages to C<STDERR>.
 
 =head2 <command>( [ @args ] [, $cb->( $reply, $err ) ] )
 
-The callback in command method is optional and can be passed as last argument.
-If the callback specified, the reply is passed to the callback as first
-argument. If any error occurred during command execution, the error object is
-passed to the callback as second argument. If the callback in command method is
-not specified and error occurred, the C<on_error> callback of the client is
-called.
-
-Error object is the instance of the class L<AnyEvent::RipeRedis::Error> and has
-two methods: C<message()> to get error message and C<code()> to get error code.
-
 The full list of the Redis commands can be found here: L<http://redis.io/commands>.
+
+The reply to the command is passed to the callback in first argument. If any
+error occurred during command execution, the error object is passed to the
+callback in second argument. Error object is the instance of the class
+L<AnyEvent::RipeRedis::Error>.
+
+The command callback is optional. If it is not specified and any error
+occurred, the C<on_error> callback of the client is called.
 
   $redis->set( 'foo', 'string' );
 
@@ -1392,6 +1390,23 @@ The full list of the Redis commands can be found here: L<http://redis.io/command
       foreach my $value ( @{$reply}  ) {
         print "$value\n";
       }
+    }
+  );
+
+You can execute multi-word commands like this:
+
+  $redis->client_getname(
+    sub {
+      my $reply = shift;
+      my $err   = shift;
+
+      if ( defined $err ) {
+        # error handling...
+
+        return;
+      }
+
+      print "$reply\n";
     }
   );
 
@@ -1475,14 +1490,17 @@ L<http://redis.io/topics/pubsub>
 
 =head2 subscribe( @channels, ( $cb | \%cbs ) )
 
-Subscribes the client to the specified channels. Method can accept two
-callbacks: C<on_reply> and C<on_message>. The C<on_reply> callback is called
-once when subscription to all specified channels will be activated. In first
-argument to the callback is passed the number of channels we are currently
-subscribed. If subscription to specified channels was lost, the C<on_reply>
-callback is called with the error object in the second argument. The
-C<on_message> callback is called on every published message. If method is
-called with one callback, it will be act as C<on_message> callback.
+Subscribes the client to the specified channels.
+
+Method can accept two callbacks: C<on_reply> and C<on_message>. The C<on_reply>
+callback is called when subscription to all specified channels will be
+activated. In first argument to the callback is passed the number of channels
+we are currently subscribed. If subscription to specified channels was lost,
+the C<on_reply> callback is called with the error object in the second argument.
+
+The C<on_message> callback is called on every published message. If the
+C<subscribe> method is called with one callback, this callback will be act as
+C<on_message> callback.
 
   $redis->subscribe( qw( foo bar ),
     { on_reply => sub {
@@ -1563,7 +1581,7 @@ Posts a message to the given channel.
 
 Unsubscribes the client from the given channels, or from all of them if none
 is given. In first argument to the callback is passed the number of channels we
-are currently subscribed or zero if we are unsubscribed from all channels.
+are currently subscribed or zero if we were unsubscribed from all channels.
 
   $redis->unsubscribe( qw( foo bar ),
     sub {
