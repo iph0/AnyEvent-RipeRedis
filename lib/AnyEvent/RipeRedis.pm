@@ -948,8 +948,11 @@ sub _process_message {
     return;
   }
 
-  $cmd->{on_message}->( $msg->[0] eq 'pmessage' ? @{$msg}[ 3, 1, 2 ]
-      : @{$msg}[ 2, 1 ] );
+  $cmd->{on_message}->(
+    $msg->[0] eq 'pmessage'
+    ? @{$msg}[ 3, 1, 2 ]
+    : @{$msg}[ 2, 1 ]
+  );
 
   return;
 }
