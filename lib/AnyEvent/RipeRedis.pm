@@ -430,19 +430,19 @@ sub _connect {
   $self->{_handle} = AnyEvent::Handle->new(
     %{ $self->{handle_params} },
     connect          => [ $self->{host}, $self->{port} ],
-    on_prepare       => $self->_get_on_prepare,
-    on_connect       => $self->_get_on_connect,
-    on_connect_error => $self->_get_on_connect_error,
-    on_rtimeout      => $self->_get_on_rtimeout,
-    on_eof           => $self->_get_on_eof,
-    on_error         => $self->_get_handle_on_error,
-    on_read          => $self->_get_on_read,
+    on_prepare       => $self->_create_on_prepare,
+    on_connect       => $self->_create_on_connect,
+    on_connect_error => $self->_create_on_connect_error,
+    on_rtimeout      => $self->_create_on_rtimeout,
+    on_eof           => $self->_create_on_eof,
+    on_error         => $self->_create_on_handle_error,
+    on_read          => $self->_create_on_read,
   );
 
   return;
 }
 
-sub _get_on_prepare {
+sub _create_on_prepare {
   my $self = shift;
 
   weaken($self);
@@ -456,7 +456,7 @@ sub _get_on_prepare {
   };
 }
 
-sub _get_on_connect {
+sub _create_on_connect {
   my $self = shift;
 
   weaken($self);
@@ -479,7 +479,7 @@ sub _get_on_connect {
     }
     else {
       $self->{_ready} = 1;
-      $self->_flush_input_queue;
+      $self->_process_input_queue;
     }
 
     if ( defined $self->{on_connect} ) {
@@ -488,7 +488,7 @@ sub _get_on_connect {
   };
 }
 
-sub _get_on_connect_error {
+sub _create_on_connect_error {
   my $self = shift;
 
   weaken($self);
@@ -505,7 +505,7 @@ sub _get_on_connect_error {
   };
 }
 
-sub _get_on_rtimeout {
+sub _create_on_rtimeout {
   my $self = shift;
 
   weaken($self);
@@ -522,7 +522,7 @@ sub _get_on_rtimeout {
   };
 }
 
-sub _get_on_eof {
+sub _create_on_eof {
   my $self = shift;
 
   weaken($self);
@@ -535,7 +535,7 @@ sub _get_on_eof {
   };
 }
 
-sub _get_handle_on_error {
+sub _create_on_handle_error {
   my $self = shift;
 
   weaken($self);
@@ -548,7 +548,7 @@ sub _get_handle_on_error {
   };
 }
 
-sub _get_on_read {
+sub _create_on_read {
   my $self = shift;
 
   weaken($self);
@@ -825,7 +825,7 @@ sub _auth {
         }
         else {
           $self->{_ready} = 1;
-          $self->_flush_input_queue;
+          $self->_process_input_queue;
         }
       },
     }
@@ -857,7 +857,7 @@ sub _select_database {
         $self->{_select_db_state} = S_DONE;
         $self->{_ready}           = 1;
 
-        $self->_flush_input_queue;
+        $self->_process_input_queue;
       },
     }
   );
@@ -865,7 +865,7 @@ sub _select_database {
   return;
 }
 
-sub _flush_input_queue {
+sub _process_input_queue {
   my $self = shift;
 
   $self->{_temp_queue}  = $self->{_input_queue};
@@ -1040,12 +1040,8 @@ sub _abort {
   my $self = shift;
   my $err  = shift;
 
-  my @unfin_cmds = (
-    @{ $self->{_processing_queue} },
-    @{ $self->{_temp_queue} },
-    @{ $self->{_input_queue} },
-  );
-  my %channels = %{ $self->{_channels} };
+  my @queued_commands = $self->_queued_commands;
+  my %channels        = %{ $self->{_channels} };
 
   $self->{_input_queue}      = [];
   $self->{_temp_queue}       = [];
@@ -1054,7 +1050,7 @@ sub _abort {
   $self->{_channel_cnt}      = 0;
   $self->{_pchannel_cnt}     = 0;
 
-  if ( !defined $err && @unfin_cmds ) {
+  if ( !defined $err && @queued_commands ) {
     $err = _new_error( 'Connection closed by client prematurely.',
         E_CONN_CLOSED_BY_CLIENT );
   }
@@ -1082,7 +1078,7 @@ sub _abort {
       }
     }
 
-    foreach my $cmd (@unfin_cmds) {
+    foreach my $cmd (@queued_commands) {
       my $err = _new_error( qq{Operation "$cmd->{kwd}" aborted: $err_msg},
           $err_code );
 
@@ -1091,6 +1087,16 @@ sub _abort {
   }
 
   return;
+}
+
+sub _queued_commands {
+  my $self = shift;
+
+  return (
+    @{ $self->{_processing_queue} },
+    @{ $self->{_temp_queue} },
+    @{ $self->{_input_queue} },
+  );
 }
 
 sub _new_error {
@@ -1124,13 +1130,9 @@ sub DESTROY {
   my $self = shift;
 
   if ( defined $self->{_processing_queue} ) {
-    my @unfin_cmds = (
-      @{ $self->{_processing_queue} },
-      @{ $self->{_temp_queue} },
-      @{ $self->{_input_queue} },
-    );
+    my @queued_commands = $self->_queued_commands;
 
-    foreach my $cmd ( @unfin_cmds ) {
+    foreach my $cmd (@queued_commands) {
       warn qq{Operation "$cmd->{kwd}" aborted:}
           . " Client object destroyed prematurely.\n";
     }
@@ -1144,8 +1146,7 @@ __END__
 
 =head1 NAME
 
-AnyEvent::RipeRedis - Flexible non-blocking Redis client with reconnect
-feature
+AnyEvent::RipeRedis - Flexible non-blocking Redis client
 
 =head1 SYNOPSIS
 
@@ -1184,9 +1185,9 @@ feature
 
 =head1 DESCRIPTION
 
-AnyEvent::RipeRedis is flexible non-blocking Redis client with reconnect
-feature. The client supports subscriptions, transactions and connection via
-UNIX-socket.
+AnyEvent::RipeRedis is flexible non-blocking Redis client. Supports
+subscriptions, transactions and can automaticaly restore connection after
+failure.
 
 Requires Redis 1.2 or higher, and any supported event loop.
 
@@ -1289,18 +1290,18 @@ Disabled by default.
 =item reconnect => $boolean
 
 If the connection to the Redis server was lost and the parameter C<reconnect> is
-TRUE, the client try to restore the connection on a next command execution
-unless C<min_reconnect_interval> is specified. The client try to reconnect only
-once and if it fails, is called the C<on_error> callback. If you need several
-attempts of the reconnection, just retry a command from the C<on_error>
-callback as many times, as you need. This feature made the client more responsive.
+TRUE (default), the client try to restore the connection when you execute next
+command. The client try to reconnect only once and, if attempt fails, the error
+object is passed to command callback. If you need several attempts of the
+reconnection, you must retry a command from the callback as many times, as you
+need. Such behavior allows to manage reconnection procedure.
 
 Enabled by default.
 
 =item min_reconnect_interval => $fractional_seconds
 
 If the parameter is specified, the client will try to reconnect not often, than
-after this interval.
+after this interval. Commands executed between reconnections will be queued.
 
   min_reconnect_interval => 5,
 
@@ -1308,13 +1309,15 @@ Not set by default.
 
 =item handle_params => \%params
 
-Specifies L<AnyEvent::Handle> parameters. Enabling of the C<autocork> parameter
-can improve perfomance.
+Specifies L<AnyEvent::Handle> parameters.
 
   handle_params => {
     autocork => 1,
     linger   => 60,
   }
+
+Enabling of the C<autocork> parameter can improve perfomance. See
+documentation on L<AnyEvent::Handle> for more information.
 
 =item on_connect => $cb->()
 
