@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.05_01';
+our $VERSION = '0.06';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1294,7 +1294,7 @@ TRUE (default), the client try to restore the connection when you execute next
 command. The client try to reconnect only once and, if attempt fails, the error
 object is passed to command callback. If you need several attempts of the
 reconnection, you must retry a command from the callback as many times, as you
-need. Such behavior allows to manage reconnection procedure.
+need. Such behavior allows to control reconnection procedure.
 
 Enabled by default.
 
