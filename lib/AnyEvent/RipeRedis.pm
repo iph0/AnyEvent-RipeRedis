@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.06';
+our $VERSION = '0.07_01';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -132,20 +132,20 @@ sub new {
   $self->min_reconnect_interval( $params{min_reconnect_interval} );
   $self->on_error( $params{on_error} );
 
-  $self->{_handle}           = undef;
-  $self->{_connected}        = 0;
-  $self->{_lazy_conn_state}  = $params{lazy};
-  $self->{_auth_state}       = S_NEED_PERFORM;
-  $self->{_select_db_state}  = S_NEED_PERFORM;
-  $self->{_ready}            = 0;
-  $self->{_input_queue}      = [];
-  $self->{_temp_queue}       = [];
-  $self->{_processing_queue} = [];
-  $self->{_txn_lock}         = 0;
-  $self->{_channels}         = {};
-  $self->{_channel_cnt}      = 0;
-  $self->{_pchannel_cnt}     = 0;
-  $self->{_reconnect_timer}  = undef;
+  $self->{_handle}             = undef;
+  $self->{_connected}          = 0;
+  $self->{_lazy_conn_state}    = $params{lazy};
+  $self->{_auth_state}         = S_NEED_PERFORM;
+  $self->{_db_selection_state} = S_NEED_PERFORM;
+  $self->{_ready}              = 0;
+  $self->{_input_queue}        = [];
+  $self->{_temp_queue}         = [];
+  $self->{_processing_queue}   = [];
+  $self->{_txn_lock}           = 0;
+  $self->{_channels}           = {};
+  $self->{_channel_cnt}        = 0;
+  $self->{_pchannel_cnt}       = 0;
+  $self->{_reconnect_timer}    = undef;
 
   unless ( $self->{_lazy_conn_state} ) {
     $self->_connect;
@@ -468,13 +468,13 @@ sub _create_on_connect {
       $self->{_auth_state} = S_DONE;
     }
     if ( $self->{database} == 0 ) {
-      $self->{_select_db_state} = S_DONE;
+      $self->{_db_selection_state} = S_DONE;
     }
 
     if ( $self->{_auth_state} == S_NEED_PERFORM ) {
       $self->_auth;
     }
-    elsif ( $self->{_select_db_state} == S_NEED_PERFORM ) {
+    elsif ( $self->{_db_selection_state} == S_NEED_PERFORM ) {
       $self->_select_database;
     }
     else {
@@ -713,7 +713,7 @@ sub _execute {
     if ( defined $self->{_handle} ) {
       if ( $self->{_connected} ) {
         if ( $self->{_auth_state} == S_DONE ) {
-          if ( $self->{_select_db_state} == S_NEED_PERFORM ) {
+          if ( $self->{_db_selection_state} == S_NEED_PERFORM ) {
             $self->_select_database;
           }
         }
@@ -820,7 +820,7 @@ sub _auth {
 
         $self->{_auth_state} = S_DONE;
 
-        if ( $self->{_select_db_state} == S_NEED_PERFORM ) {
+        if ( $self->{_db_selection_state} == S_NEED_PERFORM ) {
           $self->_select_database;
         }
         else {
@@ -838,7 +838,7 @@ sub _select_database {
   my $self = shift;
 
   weaken($self);
-  $self->{_select_db_state} = S_IN_PROGRESS;
+  $self->{_db_selection_state} = S_IN_PROGRESS;
 
   $self->_push_write(
     { kwd  => 'select',
@@ -848,15 +848,15 @@ sub _select_database {
         my $err = $_[1];
 
         if ( defined $err ) {
-          $self->{_select_db_state} = S_NEED_PERFORM;
+          $self->{_db_selection_state} = S_NEED_PERFORM;
           $self->_abort($err);
 
           return;
         }
 
-        $self->{_select_db_state} = S_DONE;
-        $self->{_ready}           = 1;
+        $self->{_db_selection_state} = S_DONE;
 
+        $self->{_ready} = 1;
         $self->_process_input_queue;
       },
     }
@@ -1021,11 +1021,11 @@ sub _disconnect {
     $self->{_handle}->destroy;
     undef $self->{_handle};
   }
-  $self->{_connected}       = 0;
-  $self->{_auth_state}      = S_NEED_PERFORM;
-  $self->{_select_db_state} = S_NEED_PERFORM;
-  $self->{_ready}           = 0;
-  $self->{_txn_lock}        = 0;
+  $self->{_connected}          = 0;
+  $self->{_auth_state}         = S_NEED_PERFORM;
+  $self->{_db_selection_state} = S_NEED_PERFORM;
+  $self->{_ready}              = 0;
+  $self->{_txn_lock}           = 0;
 
   $self->_abort($err);
 
