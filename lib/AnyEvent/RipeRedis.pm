@@ -141,7 +141,7 @@ sub new {
   $self->{_input_queue}        = [];
   $self->{_temp_queue}         = [];
   $self->{_processing_queue}   = [];
-  $self->{_txn_mode}           = 0;
+  $self->{_multi_mode}         = 0;
   $self->{_channels}           = {};
   $self->{_channel_cnt}        = 0;
   $self->{_pchannel_cnt}       = 0;
@@ -213,7 +213,7 @@ sub multi {
   my $self = shift;
   my $cmd  = $self->_prepare( 'multi', [@_] );
 
-  $self->{_txn_mode} = 1;
+  $self->{_multi_mode} = 1;
   $self->_execute($cmd);
 
   return;
@@ -223,7 +223,7 @@ sub exec {
   my $self = shift;
   my $cmd  = $self->_prepare( 'exec', [@_] );
 
-  $self->{_txn_mode} = 0;
+  $self->{_multi_mode} = 0;
   $self->_execute($cmd);
 
   return;
@@ -233,7 +233,7 @@ sub discard {
   my $self = shift;
   my $cmd  = $self->_prepare( 'discard', [@_] );
 
-  $self->{_txn_mode} = 0;
+  $self->{_multi_mode} = 0;
   $self->_execute($cmd);
 
   return;
@@ -332,7 +332,7 @@ sub disconnect {
         croak q{"on_message" callback must be specified};
       }
 
-      if ( $self->{_txn_mode} ) {
+      if ( $self->{_multi_mode} ) {
         AE::postpone(
           sub {
             my $err = _new_error(
@@ -1035,7 +1035,7 @@ sub _disconnect {
   $self->{_auth_state}         = S_NEED_DO;
   $self->{_db_selection_state} = S_NEED_DO;
   $self->{_ready}              = 0;
-  $self->{_txn_mode}           = 0;
+  $self->{_multi_mode}         = 0;
 
   $self->_abort($err);
 
