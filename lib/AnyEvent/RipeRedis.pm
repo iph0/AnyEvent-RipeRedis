@@ -61,7 +61,7 @@ use constant {
   %ERROR_CODES,
 
   # Operation status
-  S_NEED_PERFORM => 1,
+  S_NEED_DO      => 1,
   S_IN_PROGRESS  => 2,
   S_DONE         => 3,
 
@@ -120,11 +120,12 @@ sub new {
   $self->{password} = $params{password};
   $self->{database}
       = defined $params{database} ? $params{database} : D_DB_INDEX;
-  $self->{utf8}      = exists $params{utf8}      ? $params{utf8}      : 1;
-  $self->{reconnect} = exists $params{reconnect} ? $params{reconnect} : 1;
-  $self->{handle_params}    = $params{handle_params} || {};
-  $self->{on_connect}       = $params{on_connect};
-  $self->{on_disconnect}    = $params{on_disconnect};
+  $self->{utf8}          = exists $params{utf8} ? $params{utf8} : 1;
+  $self->{lazy}          = $params{lazy};
+  $self->{reconnect}     = exists $params{reconnect} ? $params{reconnect} : 1;
+  $self->{handle_params} = $params{handle_params} || {};
+  $self->{on_connect}    = $params{on_connect};
+  $self->{on_disconnect} = $params{on_disconnect};
   $self->{on_connect_error} = $params{on_connect_error};
 
   $self->connection_timeout( $params{connection_timeout} );
@@ -134,9 +135,8 @@ sub new {
 
   $self->{_handle}             = undef;
   $self->{_connected}          = 0;
-  $self->{_lazy_conn_state}    = $params{lazy};
-  $self->{_auth_state}         = S_NEED_PERFORM;
-  $self->{_db_selection_state} = S_NEED_PERFORM;
+  $self->{_auth_state}         = S_NEED_DO;
+  $self->{_db_selection_state} = S_NEED_DO;
   $self->{_ready}              = 0;
   $self->{_input_queue}        = [];
   $self->{_temp_queue}         = [];
@@ -147,7 +147,7 @@ sub new {
   $self->{_pchannel_cnt}       = 0;
   $self->{_reconnect_timer}    = undef;
 
-  unless ( $self->{_lazy_conn_state} ) {
+  unless ( $self->{lazy} ) {
     $self->_connect;
   }
 
@@ -471,10 +471,10 @@ sub _create_on_connect {
       $self->{_db_selection_state} = S_DONE;
     }
 
-    if ( $self->{_auth_state} == S_NEED_PERFORM ) {
+    if ( $self->{_auth_state} == S_NEED_DO ) {
       $self->_auth;
     }
-    elsif ( $self->{_db_selection_state} == S_NEED_PERFORM ) {
+    elsif ( $self->{_db_selection_state} == S_NEED_DO ) {
       $self->_select_database;
     }
     else {
@@ -713,17 +713,17 @@ sub _execute {
     if ( defined $self->{_handle} ) {
       if ( $self->{_connected} ) {
         if ( $self->{_auth_state} == S_DONE ) {
-          if ( $self->{_db_selection_state} == S_NEED_PERFORM ) {
+          if ( $self->{_db_selection_state} == S_NEED_DO ) {
             $self->_select_database;
           }
         }
-        elsif ( $self->{_auth_state} == S_NEED_PERFORM ) {
+        elsif ( $self->{_auth_state} == S_NEED_DO ) {
           $self->_auth;
         }
       }
     }
-    elsif ( $self->{_lazy_conn_state} ) {
-      $self->{_lazy_conn_state} = 0;
+    elsif ( $self->{lazy} ) {
+      undef $self->{lazy};
       $self->_connect;
     }
     elsif ( $self->{reconnect} ) {
@@ -812,7 +812,7 @@ sub _auth {
         my $err = $_[1];
 
         if ( defined $err ) {
-          $self->{_auth_state} = S_NEED_PERFORM;
+          $self->{_auth_state} = S_NEED_DO;
           $self->_abort($err);
 
           return;
@@ -820,7 +820,7 @@ sub _auth {
 
         $self->{_auth_state} = S_DONE;
 
-        if ( $self->{_db_selection_state} == S_NEED_PERFORM ) {
+        if ( $self->{_db_selection_state} == S_NEED_DO ) {
           $self->_select_database;
         }
         else {
@@ -848,7 +848,7 @@ sub _select_database {
         my $err = $_[1];
 
         if ( defined $err ) {
-          $self->{_db_selection_state} = S_NEED_PERFORM;
+          $self->{_db_selection_state} = S_NEED_DO;
           $self->_abort($err);
 
           return;
@@ -1022,8 +1022,8 @@ sub _disconnect {
     undef $self->{_handle};
   }
   $self->{_connected}          = 0;
-  $self->{_auth_state}         = S_NEED_PERFORM;
-  $self->{_db_selection_state} = S_NEED_PERFORM;
+  $self->{_auth_state}         = S_NEED_DO;
+  $self->{_db_selection_state} = S_NEED_DO;
   $self->{_ready}              = 0;
   $self->{_txn_lock}           = 0;
 
