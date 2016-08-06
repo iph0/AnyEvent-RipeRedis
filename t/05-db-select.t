@@ -64,8 +64,8 @@ sub t_auto_select {
     }
   );
 
-  my $db1_index = $redis_db1->selected_database;
-  my $db2_index = $redis_db2->selected_database;
+  my $db1_index = $redis_db1->database;
+  my $db2_index = $redis_db2->database;
 
   my $t_data = set_get( $redis_db1, $redis_db2 );
 
@@ -118,8 +118,8 @@ sub t_select {
     }
   );
 
-  my $db1_index = $redis_db1->selected_database;
-  my $db2_index = $redis_db2->selected_database;
+  my $db1_index = $redis_db1->database;
+  my $db2_index = $redis_db2->database;
 
   my $t_data = set_get( $redis_db1, $redis_db2 );
 
@@ -247,8 +247,8 @@ sub t_auto_select_after_reconn {
     }
   );
 
-  my $db1_index = $redis_db1->selected_database;
-  my $db2_index = $redis_db2->selected_database;
+  my $db1_index = $redis_db1->database;
+  my $db2_index = $redis_db2->database;
 
   my %t_data;
 
@@ -351,8 +351,8 @@ sub t_auto_select_after_auth {
     }
   );
 
-  my $db1_index = $redis_db1->selected_database;
-  my $db2_index = $redis_db2->selected_database;
+  my $db1_index = $redis_db1->database;
+  my $db2_index = $redis_db2->database;
 
   my $t_data = set_get( $redis_db1, $redis_db2 );
 

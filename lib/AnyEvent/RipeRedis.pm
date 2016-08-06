@@ -359,21 +359,6 @@ sub disconnect {
   }
 }
 
-sub host {
-  my $self = shift;
-  return $self->{host};
-}
-
-sub port {
-  my $self = shift;
-  return $self->{port};
-}
-
-sub selected_database {
-  my $self = shift;
-  return $self->{database};
-}
-
 sub on_error {
   my $self = shift;
 
@@ -397,6 +382,13 @@ sub on_error {
 # Generate accessors
 {
   no strict 'refs';
+
+  foreach my $name ( qw( host port database ) ) {
+    *{$name} = sub {
+      my $self = shift;
+      return $self->{$name};
+    }
+  }
 
   foreach my $name ( qw( connection_timeout read_timeout
       min_reconnect_interval ) )
@@ -1897,7 +1889,7 @@ Get current port of the client.
 
 Selects the database by numeric index.
 
-=head2 selected_database()
+=head2 database()
 
 Get selected database index.
 

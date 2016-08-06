@@ -11,7 +11,7 @@ my $SERVER_INFO = run_redis_instance();
 if ( !defined $SERVER_INFO ) {
   plan skip_all => 'redis-server is required for this test';
 }
-plan tests => 30;
+plan tests => 31;
 
 my $REDIS;
 my $T_IS_CONN = 0;
@@ -60,6 +60,7 @@ t_multi_word_command($REDIS);
 t_oprn_error($REDIS);
 t_default_on_error($REDIS);
 t_error_after_exec($REDIS);
+t_discard($REDIS);
 t_quit($REDIS);
 
 
@@ -479,13 +480,13 @@ sub t_nested_mbulk_reply {
         $redis->rpush( 'list', "element_$i" );
       }
 
-      $redis->set( 'foo', "some\r\nstring" );
+      $redis->set( 'bar', "some\r\nstring" );
 
       $redis->multi;
-      $redis->incr( 'bar' );
+      $redis->incr( 'foo' );
       $redis->lrange( 'list', 0, -1 );
       $redis->lrange( 'non_existent', 0, -1 );
-      $redis->get( 'foo' );
+      $redis->get( 'bar' );
       $redis->lrange( 'list', 0, -1 );
       $redis->exec(
         sub {
@@ -498,7 +499,7 @@ sub t_nested_mbulk_reply {
         }
       );
 
-      $redis->del( qw( foo list bar ),
+      $redis->del( qw( foo bar list ),
         sub {
           my $reply = shift;
           my $err   = shift;
@@ -686,6 +687,51 @@ sub t_error_after_exec {
   can_ok( $t_reply->[1], 'message' );
   ok( defined $t_reply->[1]->message, "$t_npref; nested error message" );
   is( $t_reply->[1]->code, E_OPRN_ERROR, "$t_npref; nested error message" );
+
+  return;
+}
+
+sub t_discard {
+  my $redis = shift;
+
+  my $t_reply;
+
+  ev_loop(
+    sub {
+      my $cv = shift;
+
+      $redis->set( 'foo', "some\r\nstring" );
+
+      $redis->multi;
+      $redis->get( 'foo' );
+      $redis->incr( 'bar' );
+      $redis->discard(
+        sub {
+          $t_reply = shift;
+          my $err  = shift;
+
+          if ( defined $err ) {
+            diag( $err->message );
+          }
+        }
+      );
+
+      $redis->del( 'foo',
+        sub {
+          my $reply = shift;
+          my $err   = shift;
+
+          if ( defined $err ) {
+            diag( $err->message );
+          }
+
+          $cv->send;
+        }
+      );
+    }
+  );
+
+  is( $t_reply, 'OK', 'DISCARD; status reply' );
 
   return;
 }

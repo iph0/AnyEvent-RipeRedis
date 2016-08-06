@@ -35,7 +35,7 @@ can_ok( $REDIS, 'host' );
 can_ok( $REDIS, 'port' );
 can_ok( $REDIS, 'connection_timeout' );
 can_ok( $REDIS, 'read_timeout' );
-can_ok( $REDIS, 'selected_database' );
+can_ok( $REDIS, 'database' );
 can_ok( $REDIS, 'utf8' );
 can_ok( $REDIS, 'reconnect' );
 can_ok( $REDIS, 'on_connect' );
@@ -246,7 +246,7 @@ sub t_on_error {
 sub t_database {
   my $redis = shift;
 
-  my $t_db_index = $redis->selected_database;
+  my $t_db_index = $redis->database;
 
   is( $t_db_index, 0, 'get database index' );
 

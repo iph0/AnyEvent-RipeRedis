@@ -10,7 +10,7 @@ my $SERVER_INFO = run_redis_instance();
 if ( !defined $SERVER_INFO ) {
   plan skip_all => 'redis-server is required for this test';
 }
-plan tests => 11;
+plan tests => 13;
 
 my $R_CONSUM = AnyEvent::RipeRedis->new(
   host => $SERVER_INFO->{host},
@@ -27,7 +27,19 @@ t_psubunsub( $R_CONSUM, $R_TRANSM );
 $R_CONSUM->disconnect;
 $R_TRANSM->disconnect;
 
-t_sub_after_multi( $SERVER_INFO );
+my $REDIS = AnyEvent::RipeRedis->new(
+  host => $SERVER_INFO->{host},
+  port => $SERVER_INFO->{port},
+  on_error => sub {
+    # do not print this errors
+  },
+);
+
+t_sub_after_multi($REDIS);
+t_sub_after_exec($REDIS);
+t_sub_after_discard($REDIS);
+
+$REDIS->disconnect;
 
 
 sub t_subunsub {
@@ -287,15 +299,7 @@ sub t_psubunsub {
 }
 
 sub t_sub_after_multi {
-  my $server_info = shift;
-
-  my $redis = AnyEvent::RipeRedis->new(
-    host => $server_info->{host},
-    port => $server_info->{port},
-    on_error => sub {
-      # do not print this errors
-    },
-  );
+  my $redis = shift;
 
   my $t_err;
 
@@ -326,6 +330,146 @@ sub t_sub_after_multi {
       . q{ after "multi" command. First, the transaction must be finalized.},
       "$t_pname; error message" );
   is( $t_err->code, E_OPRN_ERROR, "$t_pname; error code" );
+
+  return;
+}
+
+sub t_sub_after_exec {
+  my $redis = shift;
+
+  my $t_reply;
+
+  ev_loop(
+    sub {
+      my $cv = shift;
+
+      $redis->set( 'foo', "some\r\nstring" );
+
+      $redis->multi;
+      $redis->get( 'foo' );
+      $redis->incr( 'bar' );
+      $redis->exec(
+        sub {
+          my $reply = shift;
+          my $err   = shift;
+
+          if ( defined $err ) {
+            diag( $err->message );
+          }
+        }
+      );
+
+      $redis->subscribe( 'channel',
+        { on_reply => sub {
+            $t_reply = shift;
+            my $err  = shift;
+
+            if ( defined $err ) {
+              diag( $err->message );
+            }
+
+            $redis->unsubscribe( 'channel',
+              sub {
+                my $reply = shift;
+                my $err   = shift;
+
+                if ( defined $err ) {
+                  diag( $err->message );
+                }
+
+                $redis->del( qw( foo bar ),
+                  sub {
+                    my $reply = shift;
+                    my $err   = shift;
+
+                    if ( defined $err ) {
+                      diag( $err->message );
+                    }
+
+                    $cv->send;
+                  }
+                );
+              }
+            );
+          },
+
+          on_message => sub {},
+        }
+      );
+    }
+  );
+
+  is( $t_reply, 1, 'subscription after EXEC command' );
+
+  return;
+}
+
+sub t_sub_after_discard {
+  my $redis = shift;
+
+  my $t_reply;
+
+  ev_loop(
+    sub {
+      my $cv = shift;
+
+      $redis->set( 'foo', "some\r\nstring" );
+
+      $redis->multi;
+      $redis->get( 'foo' );
+      $redis->incr( 'bar' );
+      $redis->discard(
+        sub {
+          my $reply = shift;
+          my $err   = shift;
+
+          if ( defined $err ) {
+            diag( $err->message );
+          }
+        }
+      );
+
+      $redis->subscribe( 'channel',
+        { on_reply => sub {
+            $t_reply = shift;
+            my $err  = shift;
+
+            if ( defined $err ) {
+              diag( $err->message );
+            }
+
+            $redis->unsubscribe( 'channel',
+              sub {
+                my $reply = shift;
+                my $err   = shift;
+
+                if ( defined $err ) {
+                  diag( $err->message );
+                }
+
+                $redis->del( 'foo',
+                  sub {
+                    my $reply = shift;
+                    my $err   = shift;
+
+                    if ( defined $err ) {
+                      diag( $err->message );
+                    }
+
+                    $cv->send;
+                  }
+                );
+              }
+            );
+          },
+
+          on_message => sub {},
+        }
+      );
+    }
+  );
+
+  is( $t_reply, 1, 'subscription after DISCARD command' );
 
   return;
 }
