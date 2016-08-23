@@ -1873,7 +1873,7 @@ L<AnyEvent>, L<Redis::hiredis>, L<Redis>, L<RedisDB>
 
 Eugene Ponizovsky, E<lt>ponizovsky@gmail.comE<gt>
 
-Sponsored by SMS Online, <dev.opensource@sms-online.com>
+Sponsored by SMS Online, E<lt>dev.opensource@sms-online.comE<gt>
 
 =head2 Special thanks
 

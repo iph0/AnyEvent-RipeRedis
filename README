@@ -22,6 +22,8 @@ AUTHOR
 
 Eugene Ponizovsky, <ponizovsky@gmail.com>
 
+Sponsored by SMS Online, <dev.opensource@sms-online.com>
+
 Special thanks
 
 * Alexey Shrub
@@ -31,8 +33,8 @@ Special thanks
 
 COPYRIGHT AND LICENSE
 
-Copyright (c) 2012-2016, Eugene Ponizovsky, <ponizovsky@gmail.com>.
-All rights reserved.
+Copyright (c) 2012-2016, Eugene Ponizovsky, <ponizovsky@gmail.com>,
+SMS Online, <dev.opensource@sms-online.com>. All rights reserved.
 
 This module is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
