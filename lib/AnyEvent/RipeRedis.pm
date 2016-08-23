@@ -70,13 +70,13 @@ use constant {
   EOL_LENGTH => 2,
 };
 
-my %SUB_COMMANDS = (
+my %SUB_CMDS = (
   subscribe  => 1,
   psubscribe => 1,
 );
 
-my %SUBUNSUB_COMMANDS = (
-  %SUB_COMMANDS,
+my %SUBUNSUB_CMDS = (
+  %SUB_CMDS,
   unsubscribe  => 1,
   punsubscribe => 1,
 );
@@ -84,6 +84,20 @@ my %SUBUNSUB_COMMANDS = (
 my %MESSAGE_TYPES = (
   message  => 1,
   pmessage => 1,
+);
+
+my %NEED_PREPROCESS = (
+  multi       => 1,
+  exec        => 1,
+  discard     => 1,
+  eval_cached => 1,
+  %SUBUNSUB_CMDS,
+);
+
+my %NEED_POSTPROCESS = (
+  info   => 1,
+  select => 1,
+  quit   => 1,
 );
 
 my %ERR_PREFS_MAP = (
@@ -133,19 +147,13 @@ sub new {
   $self->min_reconnect_interval( $params{min_reconnect_interval} );
   $self->on_error( $params{on_error} );
 
-  $self->{_handle}             = undef;
-  $self->{_connected}          = 0;
-  $self->{_auth_state}         = S_NEED_DO;
-  $self->{_db_selection_state} = S_NEED_DO;
-  $self->{_ready}              = 0;
-  $self->{_input_queue}        = [];
-  $self->{_temp_queue}         = [];
-  $self->{_processing_queue}   = [];
-  $self->{_txn_mode}           = 0;
-  $self->{_channels}           = {};
-  $self->{_channel_cnt}        = 0;
-  $self->{_pchannel_cnt}       = 0;
-  $self->{_reconnect_timer}    = undef;
+  $self->_reset_internals;
+  $self->{_input_queue}      = [];
+  $self->{_temp_queue}       = [];
+  $self->{_processing_queue} = [];
+  $self->{_channels}         = {};
+  $self->{_channel_cnt}      = 0;
+  $self->{_pchannel_cnt}     = 0;
 
   unless ( $self->{lazy} ) {
     $self->_connect;
@@ -154,156 +162,11 @@ sub new {
   return $self;
 }
 
-sub info {
-  my $self = shift;
-  my $cmd  = $self->_prepare( 'info', [@_] );
+sub execute {
+  my $self     = shift;
+  my $cmd_name = shift;
 
-  weaken($self);
-  my $on_reply = $cmd->{on_reply};
-
-  $cmd->{on_reply} = sub {
-    my $reply = shift;
-    my $err   = shift;
-
-    if ( defined $err ) {
-      $on_reply->( undef, $err );
-      return;
-    }
-
-    $reply = { map { split( m/:/, $_, 2 ) }
-        grep { m/^[^#]/ } split( EOL, $reply ) };
-
-    $on_reply->($reply);
-  };
-
-  $self->_execute($cmd);
-
-  return;
-}
-
-sub select {
-  my $self = shift;
-  my $cmd  = $self->_prepare( 'select', [@_] );
-
-  weaken($self);
-
-  my $on_reply = $cmd->{on_reply};
-  my $database = $cmd->{args}[0];
-
-  $cmd->{on_reply} = sub {
-    my $reply = shift;
-    my $err   = shift;
-
-    if ( defined $err ) {
-      $on_reply->( undef, $err );
-      return;
-    }
-
-    $self->{database} = $database;
-
-    $on_reply->($reply);
-  };
-
-  $self->_execute($cmd);
-
-  return;
-}
-
-sub multi {
-  my $self = shift;
-  my $cmd  = $self->_prepare( 'multi', [@_] );
-
-  $self->{_txn_mode} = 1;
-  $self->_execute($cmd);
-
-  return;
-}
-
-sub exec {
-  my $self = shift;
-  my $cmd  = $self->_prepare( 'exec', [@_] );
-
-  $self->{_txn_mode} = 0;
-  $self->_execute($cmd);
-
-  return;
-}
-
-sub discard {
-  my $self = shift;
-  my $cmd  = $self->_prepare( 'discard', [@_] );
-
-  $self->{_txn_mode} = 0;
-  $self->_execute($cmd);
-
-  return;
-}
-
-sub eval_cached {
-  my $self = shift;
-  my $cmd  = $self->_prepare( 'evalsha', [@_] );
-
-  my $script = $cmd->{args}[0];
-  unless ( exists $EVAL_CACHE{$script} ) {
-    $EVAL_CACHE{$script} = sha1_hex($script);
-  }
-  $cmd->{args}[0] = $EVAL_CACHE{$script};
-
-  {
-    weaken($self);
-    weaken( my $cmd = $cmd );
-
-    my $on_reply = $cmd->{on_reply};
-
-    $cmd->{on_reply} = sub {
-      my $reply = shift;
-      my $err   = shift;
-
-      if ( defined $err ) {
-        if ( $err->code == E_NO_SCRIPT ) {
-          $cmd->{kwd}     = 'eval';
-          $cmd->{args}[0] = $script;
-
-          $self->_push_write($cmd);
-
-          return;
-        }
-
-        $on_reply->( $reply, $err );
-
-        return;
-      }
-
-      $on_reply->($reply);
-    };
-  }
-
-  $self->_execute($cmd);
-
-  return;
-}
-
-sub quit {
-  my $self = shift;
-  my $cmd  = $self->_prepare( 'quit', [@_] );
-
-  weaken($self);
-  my $on_reply = $cmd->{on_reply};
-
-  $cmd->{on_reply} = sub {
-    my $reply = shift;
-    my $err   = shift;
-
-    if ( defined $err ) {
-      $on_reply->( undef, $err );
-      return;
-    }
-
-    $self->_disconnect;
-
-    $on_reply->($reply);
-  };
-
+  my $cmd = $self->_prepare( $cmd_name, [@_] );
   $self->_execute($cmd);
 
   return;
@@ -315,48 +178,6 @@ sub disconnect {
   $self->_disconnect;
 
   return;
-}
-
-# Generate sub/unsub methods
-{
-  no strict 'refs';
-
-  foreach my $kwd ( keys %SUBUNSUB_COMMANDS ) {
-    *{$kwd} = sub {
-      my $self = shift;
-      my $cmd = $self->_prepare( $kwd, [@_] );
-
-      if ( exists $SUB_COMMANDS{ $cmd->{kwd} }
-        && !defined $cmd->{on_message} )
-      {
-        croak q{"on_message" callback must be specified};
-      }
-
-      if ( $self->{_txn_mode} ) {
-        AE::postpone(
-          sub {
-            my $err = _new_error(
-              qq{Command "$cmd->{kwd}" not allowed after "multi" command.}
-                  . ' First, the transaction must be finalized.',
-              E_OPRN_ERROR
-            );
-
-            $cmd->{on_reply}->( undef, $err );
-          }
-        );
-
-        return;
-      }
-
-      if ( @{ $cmd->{args} } ) {
-        $cmd->{reply_cnt} = scalar @{ $cmd->{args} };
-      }
-
-      $self->_execute($cmd);
-
-      return;
-    };
-  }
 }
 
 sub on_error {
@@ -502,7 +323,6 @@ sub _create_on_connect_error {
       "Can't connect to $self->{host}:$self->{port}: $err_msg",
       E_CANT_CONN
     );
-
     $self->_disconnect($err);
   };
 }
@@ -515,7 +335,6 @@ sub _create_on_rtimeout {
   return sub {
     if ( @{ $self->{_processing_queue} } ) {
       my $err = _new_error( 'Read timed out.', E_READ_TIMEDOUT );
-
       $self->_disconnect($err);
     }
     else {
@@ -532,7 +351,6 @@ sub _create_on_eof {
   return sub {
     my $err = _new_error( 'Connection closed by remote host.',
         E_CONN_CLOSED_BY_REMOTE_HOST );
-
     $self->_disconnect($err);
   };
 }
@@ -633,7 +451,6 @@ sub _create_on_read {
           else {
             my $err = _new_error( 'Unexpected reply received.',
                 E_UNEXPECTED_DATA );
-
             $self->_disconnect($err);
 
             return;
@@ -668,27 +485,37 @@ sub _create_on_read {
 }
 
 sub _prepare {
-  my $self = shift;
-  my $kwd  = shift;
-  my $args = shift;
+  my $self     = shift;
+  my $cmd_name = shift;
+  my $args     = shift;
 
-  my $cmd;
+  my $cbs;
   if ( ref( $args->[-1] ) eq 'HASH' ) {
-    $cmd = pop @{$args};
+    $cbs = pop @{$args};
   }
   else {
-    $cmd = {};
+    $cbs = {};
     if ( ref( $args->[-1] ) eq 'CODE' ) {
-      if ( exists $SUB_COMMANDS{$kwd} ) {
-        $cmd->{on_message} = pop @{$args};
+      if ( exists $SUB_CMDS{$cmd_name} ) {
+        $cbs->{on_message} = pop @{$args};
       }
       else {
-        $cmd->{on_reply} = pop @{$args};
+        $cbs->{on_reply} = pop @{$args};
       }
     }
   }
-  $cmd->{kwd}  = $kwd;
-  $cmd->{args} = $args;
+
+  my @kwds
+      = $cmd_name eq 'eval_cached'
+      ? ('evalsha')
+      : split( m/_/, lc($cmd_name) );
+
+  my $cmd = {
+    name => $cmd_name,
+    kwds => \@kwds,
+    args => $args,
+    %{$cbs},
+  };
 
   unless ( defined $cmd->{on_reply} ) {
     weaken($self);
@@ -710,6 +537,49 @@ sub _prepare {
 sub _execute {
   my $self = shift;
   my $cmd  = shift;
+
+  if ( exists $NEED_PREPROCESS{ $cmd->{name} } ) {
+    if ( $cmd->{name} eq 'multi' ) {
+      $self->{_multi_mode} = 1;
+    }
+    elsif ( $cmd->{name} eq 'exec'
+      || $cmd->{name} eq 'discard' )
+    {
+      $self->{_multi_mode} = 0;
+    }
+    elsif ( $cmd->{name} eq 'eval_cached' ) {
+      my $script = $cmd->{args}[0];
+      unless ( exists $EVAL_CACHE{$script} ) {
+        $EVAL_CACHE{$script} = sha1_hex($script);
+      }
+      $cmd->{args}[0] = $EVAL_CACHE{$script};
+      $cmd->{script}  = $script;
+    }
+    else { # sub/unsub
+      if ( exists $SUB_CMDS{ $cmd->{name} }
+        && !defined $cmd->{on_message} )
+      {
+        croak q{"on_message" callback must be specified};
+      }
+
+      if ( $self->{_multi_mode} ) {
+        AE::postpone {
+          my $err = _new_error(
+            qq{Command "$cmd->{name}" not allowed after "multi" command.}
+                . ' First, the transaction must be finalized.',
+            E_OPRN_ERROR
+          );
+          $cmd->{on_reply}->( undef, $err );
+        };
+
+        return;
+      };
+
+      if ( @{ $cmd->{args} } ) {
+        $cmd->{reply_cnt} = scalar @{ $cmd->{args} };
+      }
+    }
+  }
 
   unless ( $self->{_ready} ) {
     if ( defined $self->{_handle} ) {
@@ -747,16 +617,11 @@ sub _execute {
       }
     }
     else {
-      AE::postpone(
-        sub {
-          my $err = _new_error(
-            qq{Operation "$cmd->{kwd}" aborted: No connection to the server.},
-            E_NO_CONN
-          );
-
-          $cmd->{on_reply}->( undef, $err );
-        }
-      );
+      AE::postpone {
+        my $err = _new_error( qq{Operation "$cmd->{name}" aborted:}
+            . ' No connection to the server.', E_NO_CONN );
+        $cmd->{on_reply}->( undef, $err );
+      };
 
       return;
     }
@@ -776,7 +641,8 @@ sub _push_write {
   my $cmd  = shift;
 
   my $cmd_str = '';
-  foreach my $token ( $cmd->{kwd}, @{ $cmd->{args} } ) {
+  my @tokens  = ( @{ $cmd->{kwds} }, @{ $cmd->{args} } );
+  foreach my $token (@tokens) {
     unless ( defined $token ) {
       $token = '';
     }
@@ -785,11 +651,13 @@ sub _push_write {
     }
     $cmd_str .= '$' . length($token) . EOL . $token . EOL;
   }
-  $cmd_str = '*' . ( scalar( @{ $cmd->{args} } ) + 1 ) . EOL . $cmd_str;
+  $cmd_str = '*' . scalar(@tokens) . EOL . $cmd_str;
 
   my $handle = $self->{_handle};
 
-  if ( defined $self->{read_timeout} && !@{ $self->{_processing_queue} } ) {
+  if ( defined $self->{read_timeout}
+    && !@{ $self->{_processing_queue} } )
+  {
     $handle->rtimeout_reset;
     $handle->rtimeout( $self->{read_timeout} );
   }
@@ -807,7 +675,8 @@ sub _auth {
   $self->{_auth_state} = S_IN_PROGRESS;
 
   $self->_push_write(
-    { kwd  => 'auth',
+    { name => 'auth',
+      kwds => ['auth'],
       args => [ $self->{password} ],
 
       on_reply => sub {
@@ -843,7 +712,8 @@ sub _select_database {
   $self->{_db_selection_state} = S_IN_PROGRESS;
 
   $self->_push_write(
-    { kwd  => 'select',
+    { name => 'select',
+      kwds => ['select'],
       args => [ $self->{database} ],
 
       on_reply => sub {
@@ -912,16 +782,25 @@ sub _process_error {
       q{Don't know how process error message. Processing queue is empty.},
       E_UNEXPECTED_DATA
     );
-
     $self->_disconnect($err);
+
+    return;
+  }
+
+  if ( $cmd->{name} eq 'eval_cached'
+    && $err_code == E_NO_SCRIPT )
+  {
+    $cmd->{kwds}[0] = 'eval';
+    $cmd->{args}[0] = $cmd->{script};
+
+    $self->_push_write($cmd);
 
     return;
   }
 
   if ( ref($reply) ) {
     my $err = _new_error(
-        qq{Operation "$cmd->{kwd}" completed with errors.}, $err_code );
-
+        qq{Operation "$cmd->{name}" completed with errors.}, $err_code );
     $cmd->{on_reply}->( $reply, $err );
   }
   else {
@@ -944,7 +823,6 @@ sub _process_message {
           . qq{ Unknown channel or pattern "$msg->[1]".},
       E_UNEXPECTED_DATA
     );
-
     $self->_disconnect($err);
 
     return;
@@ -970,22 +848,21 @@ sub _process_success {
       q{Don't know how process reply. Processing queue is empty.},
       E_UNEXPECTED_DATA
     );
-
     $self->_disconnect($err);
 
     return;
   }
 
-  if ( exists $SUBUNSUB_COMMANDS{ $cmd->{kwd} } ) {
-    if ( $cmd->{kwd} eq 'subscribe' ) {
+  if ( exists $SUBUNSUB_CMDS{ $cmd->{name} } ) {
+    if ( $cmd->{name} eq 'subscribe' ) {
       $self->{_channels}{ $reply->[1] } = $cmd;
       $self->{_channel_cnt}++;
     }
-    elsif ( $cmd->{kwd} eq 'psubscribe' ) {
+    elsif ( $cmd->{name} eq 'psubscribe' ) {
       $self->{_channels}{ $reply->[1] } = $cmd;
       $self->{_pchannel_cnt}++;
     }
-    elsif ( $cmd->{kwd} eq 'unsubscribe' ) {
+    elsif ( $cmd->{name} eq 'unsubscribe' ) {
       unless ( defined $cmd->{reply_cnt} ) {
         $cmd->{reply_cnt} = $self->{_channel_cnt};
       }
@@ -1005,8 +882,24 @@ sub _process_success {
     $reply = $reply->[2];
   }
 
-  if ( !defined $cmd->{reply_cnt} || --$cmd->{reply_cnt} == 0 ) {
+  if ( !defined $cmd->{reply_cnt}
+    || --$cmd->{reply_cnt} == 0 )
+  {
     shift @{ $self->{_processing_queue} };
+
+    if ( exists $NEED_POSTPROCESS{ $cmd->{name} } ) {
+      if ( $cmd->{name} eq 'info' ) {
+        $reply = { map { split( m/:/, $_, 2 ) }
+            grep { m/^[^#]/ } split( EOL, $reply ) };
+      }
+      elsif ( $cmd->{name} eq 'select' ) {
+        $self->{database} = $cmd->{args}[0];
+      }
+      elsif ( $cmd->{name} eq 'quit' ) {
+        $self->_disconnect;
+      }
+    }
+
     $cmd->{on_reply}->($reply);
   }
 
@@ -1021,19 +914,27 @@ sub _disconnect {
 
   if ( defined $self->{_handle} ) {
     $self->{_handle}->destroy;
-    undef $self->{_handle};
   }
-  $self->{_connected}          = 0;
-  $self->{_auth_state}         = S_NEED_DO;
-  $self->{_db_selection_state} = S_NEED_DO;
-  $self->{_ready}              = 0;
-  $self->{_txn_mode}           = 0;
-
+  $self->_reset_internals;
   $self->_abort($err);
 
   if ( $was_connected && defined $self->{on_disconnect} ) {
     $self->{on_disconnect}->($self);
   }
+
+  return;
+}
+
+sub _reset_internals {
+  my $self = shift;
+
+  $self->{_handle}             = undef;
+  $self->{_connected}          = 0;
+  $self->{_auth_state}         = S_NEED_DO;
+  $self->{_db_selection_state} = S_NEED_DO;
+  $self->{_ready}              = 0;
+  $self->{_multi_mode}         = 0;
+  $self->{_reconnect_timer}    = undef;
 
   return;
 }
@@ -1081,9 +982,8 @@ sub _abort {
     }
 
     foreach my $cmd (@queued_commands) {
-      my $err = _new_error( qq{Operation "$cmd->{kwd}" aborted: $err_msg},
+      my $err = _new_error( qq{Operation "$cmd->{name}" aborted: $err_msg},
           $err_code );
-
       $cmd->{on_reply}->( undef, $err );
     }
   }
@@ -1107,14 +1007,13 @@ sub _new_error {
 
 sub AUTOLOAD {
   our $AUTOLOAD;
-  my $method = $AUTOLOAD;
-  $method =~ s/^.+:://;
-  my ( $kwd, @extra_args ) = split( m/_/, lc($method) );
+  my $cmd_name = $AUTOLOAD;
+  $cmd_name =~ s/^.+:://;
 
   my $sub = sub {
     my $self = shift;
-    my $cmd  = $self->_prepare( $kwd, [ @extra_args, @_ ] );
 
+    my $cmd = $self->_prepare( $cmd_name, [@_] );
     $self->_execute($cmd);
 
     return;
@@ -1122,7 +1021,7 @@ sub AUTOLOAD {
 
   do {
     no strict 'refs';
-    *{$method} = $sub;
+    *{$cmd_name} = $sub;
   };
 
   goto &{$sub};
@@ -1135,7 +1034,7 @@ sub DESTROY {
     my @queued_commands = $self->_queued_commands;
 
     foreach my $cmd (@queued_commands) {
-      warn qq{Operation "$cmd->{kwd}" aborted:}
+      warn qq{Operation "$cmd->{name}" aborted:}
           . " Client object destroyed prematurely.\n";
     }
   }
@@ -1404,6 +1303,26 @@ occurred, the C<on_error> callback of the client is called.
 You can execute multi-word commands like this:
 
   $redis->client_getname(
+    sub {
+      my $reply = shift;
+      my $err   = shift;
+
+      if ( defined $err ) {
+        # error handling...
+
+        return;
+      }
+
+      print "$reply\n";
+    }
+  );
+
+=head2 execute( $command, [ @args ] [, $cb->( $reply, $err ) ] )
+
+An alternative method to execute commands. In some cases it can be more
+convenient.
+
+  $redis->execute( 'get', 'foo',
     sub {
       my $reply = shift;
       my $err   = shift;

@@ -21,9 +21,7 @@ my $ver = get_redis_version($REDIS);
 if ( $ver < version->parse( 'v2.6' ) ) {
   plan skip_all => 'redis-server 2.6 or higher is required for this test';
 }
-plan tests => 18;
-
-can_ok( $REDIS, 'eval_cached' );
+plan tests => 17;
 
 t_no_script($REDIS);
 t_eval_cached($REDIS);
@@ -229,7 +227,7 @@ sub t_errors_in_mbulk_reply {
 
   my $t_npref = 'errors in multi-bulk reply;';
   isa_ok( $t_err, 'AnyEvent::RipeRedis::Error' );
-  is( $t_err->message, q{Operation "eval" completed with errors.},
+  is( $t_err->message, q{Operation "eval_cached" completed with errors.},
       "$t_npref; error message" );
   is( $t_err->code, E_OPRN_ERROR, "$t_npref; error code" );
 
