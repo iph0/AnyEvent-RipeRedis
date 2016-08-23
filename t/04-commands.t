@@ -11,7 +11,7 @@ my $SERVER_INFO = run_redis_instance();
 if ( !defined $SERVER_INFO ) {
   plan skip_all => 'redis-server is required for this test';
 }
-plan tests => 31;
+plan tests => 32;
 
 my $REDIS;
 my $T_IS_CONN = 0;
@@ -61,6 +61,7 @@ t_oprn_error($REDIS);
 t_default_on_error($REDIS);
 t_error_after_exec($REDIS);
 t_discard($REDIS);
+t_execute($REDIS);
 t_quit($REDIS);
 
 
@@ -732,6 +733,46 @@ sub t_discard {
   );
 
   is( $t_reply, 'OK', 'DISCARD; status reply' );
+
+  return;
+}
+
+sub t_execute {
+  my $redis = shift;
+
+  my $t_reply;
+
+  ev_loop(
+    sub {
+      my $cv = shift;
+
+      $redis->execute( 'set', 'foo', "some\r\nstring",
+        sub {
+          $t_reply = shift;
+          my $err  = shift;
+
+          if ( defined $err ) {
+            diag( $err->message );
+          }
+        }
+      );
+
+      $redis->execute( 'del', 'foo',
+        sub {
+          my $reply = shift;
+          my $err   = shift;
+
+          if ( defined $err ) {
+            diag( $err->message );
+          }
+
+          $cv->send;
+        }
+      );
+    }
+  );
+
+  is( $t_reply, 'OK', 'execute; status reply' );
 
   return;
 }

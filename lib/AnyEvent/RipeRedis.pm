@@ -555,7 +555,7 @@ sub _execute {
       $cmd->{args}[0] = $EVAL_CACHE{$script};
       $cmd->{script}  = $script;
     }
-    else { # sub/unsub
+    else {    # subscribe, unsubscribe, psubscribe, punsubscribe
       if ( exists $SUB_CMDS{ $cmd->{name} }
         && !defined $cmd->{on_message} )
       {
@@ -573,7 +573,7 @@ sub _execute {
         };
 
         return;
-      };
+      }
 
       if ( @{ $cmd->{args} } ) {
         $cmd->{reply_cnt} = scalar @{ $cmd->{args} };
@@ -895,7 +895,7 @@ sub _process_success {
       elsif ( $cmd->{name} eq 'select' ) {
         $self->{database} = $cmd->{args}[0];
       }
-      elsif ( $cmd->{name} eq 'quit' ) {
+      else {    # quit
         $self->_disconnect;
       }
     }
