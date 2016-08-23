@@ -1809,7 +1809,7 @@ The method for asynchronous disconnection.
 Gets and parses information and statistics about the server. The result
 is passed to callback as a hash reference.
 
-More information abount C<INFO> command can be found here:
+More information about C<INFO> command can be found here:
 L<http://redis.io/commands/info>
 
 =head2 host()
