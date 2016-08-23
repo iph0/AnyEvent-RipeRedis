@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.07_01';
+our $VERSION = '0.07_02';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1062,10 +1062,9 @@ AnyEvent::RipeRedis - Flexible non-blocking Redis client
 
   my $cv = AE::cv;
 
-  $redis->get( 'foo',
+  $redis->set( 'foo', 'bar',
     sub {
-      my $reply = shift;
-      my $err   = shift;
+      my $err = $_[1];
 
       if ( defined $err ) {
         my $err_msg  = $err->message;
@@ -1077,8 +1076,25 @@ AnyEvent::RipeRedis - Flexible non-blocking Redis client
         return;
       }
 
-      print "$reply\n";
-      $cv->send;
+      $redis->get( 'foo',
+        sub {
+          my $reply = shift;
+          my $err   = shift;
+
+          if ( defined $err ) {
+            my $err_msg  = $err->message;
+            my $err_code = $err->code;
+
+            warn "[$err_code] $err_msg\n";
+            $cv->send;
+
+            return;
+          }
+
+          print "$reply\n";
+          $cv->send;
+        }
+      );
     }
   );
 
@@ -1266,8 +1282,6 @@ L<AnyEvent::RipeRedis::Error>.
 The command callback is optional. If it is not specified and any error
 occurred, the C<on_error> callback of the client is called.
 
-  $redis->set( 'foo', 'string' );
-
   $redis->get( 'foo',
     sub {
       my $reply = shift;
@@ -1299,6 +1313,8 @@ occurred, the C<on_error> callback of the client is called.
       }
     }
   );
+
+  $redis->incr( 'counter' );
 
 You can execute multi-word commands like this:
 
@@ -1857,6 +1873,8 @@ L<AnyEvent>, L<Redis::hiredis>, L<Redis>, L<RedisDB>
 
 Eugene Ponizovsky, E<lt>ponizovsky@gmail.comE<gt>
 
+Sponsored by SMS Online, <dev.opensource@sms-online.com>
+
 =head2 Special thanks
 
 =over
@@ -1881,8 +1899,8 @@ Ivan Kruglov
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2012-2016, Eugene Ponizovsky, E<lt>ponizovsky@gmail.comE<gt>.
-All rights reserved.
+Copyright (c) 2012-2016, Eugene Ponizovsky, E<lt>ponizovsky@gmail.comE<gt>,
+SMS Online, E<lt>dev.opensource@sms-online.comE<gt>. All rights reserved.
 
 This module is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
