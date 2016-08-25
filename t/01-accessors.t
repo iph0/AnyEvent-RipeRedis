@@ -226,7 +226,7 @@ sub t_on_error {
   };
 
   $redis->on_error(undef);
-  
+
   my $err = AnyEvent::RipeRedis::Error->new( 'Some error', E_OPRN_ERROR );
   $redis->on_error->($err);
 
