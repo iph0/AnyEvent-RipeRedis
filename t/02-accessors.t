@@ -5,6 +5,7 @@ use warnings;
 use lib 't/tlib';
 use Test::More tests => 41;
 use AnyEvent::RipeRedis qw( :err_codes );
+use AnyEvent::RipeRedis::Error;
 
 my $REDIS = AnyEvent::RipeRedis->new(
   password               => 'test',
