@@ -33,9 +33,9 @@ my $REDIS = AnyEvent::RipeRedis->new(
 
 can_ok( $REDIS, 'host' );
 can_ok( $REDIS, 'port' );
+can_ok( $REDIS, 'database' );
 can_ok( $REDIS, 'connection_timeout' );
 can_ok( $REDIS, 'read_timeout' );
-can_ok( $REDIS, 'database' );
 can_ok( $REDIS, 'utf8' );
 can_ok( $REDIS, 'reconnect' );
 can_ok( $REDIS, 'on_connect' );
@@ -45,6 +45,7 @@ can_ok( $REDIS, 'on_error' );
 
 t_host($REDIS);
 t_port($REDIS);
+t_database($REDIS);
 t_conn_timeout($REDIS);
 t_read_timeout($REDIS);
 t_reconnect($REDIS);
@@ -54,7 +55,6 @@ t_on_connect($REDIS);
 t_on_disconnect($REDIS);
 t_on_connect_error($REDIS);
 t_on_error($REDIS);
-t_database($REDIS);
 
 
 sub t_host {
@@ -73,6 +73,16 @@ sub t_port {
   my $t_port = $redis->port;
 
   is( $t_port, 6379, 'get port' );
+
+  return;
+}
+
+sub t_database {
+  my $redis = shift;
+
+  my $t_db_index = $redis->database;
+
+  is( $t_db_index, 0, 'get database index' );
 
   return;
 }
@@ -239,16 +249,6 @@ sub t_on_error {
   );
 
   is( $redis->on_error->(), 8, q{set "on_error" callback} );
-
-  return;
-}
-
-sub t_database {
-  my $redis = shift;
-
-  my $t_db_index = $redis->database;
-
-  is( $t_db_index, 0, 'get database index' );
 
   return;
 }
