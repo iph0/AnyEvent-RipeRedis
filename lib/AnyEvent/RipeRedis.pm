@@ -1067,10 +1067,7 @@ AnyEvent::RipeRedis - Flexible non-blocking Redis client
       my $err = $_[1];
 
       if ( defined $err ) {
-        my $err_msg  = $err->message;
-        my $err_code = $err->code;
-
-        warn "[$err_code] $err_msg\n";
+        warn $err->message . "\n";
         $cv->send;
 
         return;
@@ -1082,10 +1079,7 @@ AnyEvent::RipeRedis - Flexible non-blocking Redis client
           my $err   = shift;
 
           if ( defined $err ) {
-            my $err_msg  = $err->message;
-            my $err_code = $err->code;
-
-            warn "[$err_code] $err_msg\n";
+            warn $err->message . "\n";
             $cv->send;
 
             return;
@@ -1288,6 +1282,9 @@ occurred, the C<on_error> callback of the client is called.
       my $err   = shift;
 
       if ( defined $err ) {
+        my $err_msg  = $err->message;
+        my $err_code = $err->code;
+
         # error handling...
 
         return;
@@ -1303,6 +1300,9 @@ occurred, the C<on_error> callback of the client is called.
       my $err   = shift;
 
       if ( defined $err ) {
+        my $err_msg  = $err->message;
+        my $err_code = $err->code;
+
         # error handling...
 
         return;
@@ -1324,6 +1324,9 @@ You can execute multi-word commands like this:
       my $err   = shift;
 
       if ( defined $err ) {
+        my $err_msg  = $err->message;
+        my $err_code = $err->code;
+
         # error handling...
 
         return;
@@ -1344,7 +1347,8 @@ convenient.
       my $err   = shift;
 
       if ( defined $err ) {
-        # error handling...
+        my $err_msg  = $err->message;
+        my $err_code = $err->code;
 
         return;
       }
