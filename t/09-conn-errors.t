@@ -2,15 +2,13 @@ use 5.008000;
 use strict;
 use warnings;
 
-use Test::More tests => 45;
+use Test::More tests => 40;
 use AnyEvent::RipeRedis qw( :err_codes );
 use Net::EmptyPort qw( empty_port );
 use Scalar::Util qw( weaken );
 require 't/test_helper.pl';
 
-t_cant_connect_mth1();
-t_cant_connect_mth2();
-
+t_cant_connect();
 t_no_connection();
 t_reconnection();
 t_read_timeout();
@@ -21,54 +19,7 @@ t_premature_conn_close_mth2();
 t_subscription_lost();
 
 
-sub t_cant_connect_mth1 {
-  my $redis;
-  my $port = empty_port();
-
-  my $t_cli_err;
-  my $t_cmd_err;
-
-  AE::now_update();
-  ev_loop(
-    sub {
-      my $cv = shift;
-
-      $redis = AnyEvent::RipeRedis->new(
-        port               => $port,
-        connection_timeout => 3,
-        reconnect          => 0,
-
-        on_connect_error => sub {
-          $t_cli_err = shift;
-        },
-      );
-
-      $redis->ping(
-        sub {
-          my $reply  = shift;
-          $t_cmd_err = shift;
-
-          $cv->send;
-        }
-      );
-    },
-    0
-  );
-
-  my $t_npref = q{can't connect; 'on_connect_error' used};
-  isa_ok( $t_cli_err, 'AnyEvent::RipeRedis::Error' );
-  like( $t_cli_err->message, qr/^Can't connect to localhost:$port:/,
-      "$t_npref; client error message" );
-  isa_ok( $t_cmd_err, 'AnyEvent::RipeRedis::Error' );
-  like( $t_cmd_err->message,
-      qr/^Operation "ping" aborted: Can't connect to localhost:$port:/,
-      "$t_npref; command error message" );
-  is( $t_cmd_err->code, E_CANT_CONN, "$t_npref; command error code" );
-
-  return;
-}
-
-sub t_cant_connect_mth2 {
+sub t_cant_connect {
   my $redis;
   my $port = empty_port();
 
@@ -133,7 +84,7 @@ sub t_no_connection {
         connection_timeout => 3,
         reconnect          => 0,
 
-        on_connect_error => sub {
+        on_error => sub {
           $t_cli_err = shift;
         },
       );

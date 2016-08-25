@@ -140,7 +140,6 @@ sub new {
   $self->{handle_params} = $params{handle_params} || {};
   $self->{on_connect}    = $params{on_connect};
   $self->{on_disconnect} = $params{on_disconnect};
-  $self->{on_connect_error} = $params{on_connect_error};
 
   $self->connection_timeout( $params{connection_timeout} );
   $self->read_timeout( $params{read_timeout} );
@@ -232,9 +231,7 @@ sub on_error {
     };
   }
 
-  foreach my $name ( qw( utf8 reconnect on_connect on_disconnect
-      on_connect_error ) )
-  {
+  foreach my $name ( qw( utf8 reconnect on_connect on_disconnect ) ) {
     *{$name} = sub {
       my $self = shift;
 
@@ -962,12 +959,7 @@ sub _abort {
     my $err_msg  = $err->message;
     my $err_code = $err->code;
 
-    if ( defined $self->{on_connect_error} && $err_code == E_CANT_CONN ) {
-      $self->{on_connect_error}->($err);
-    }
-    else {
-      $self->{on_error}->($err);
-    }
+    $self->{on_error}->($err);
 
     if ( %channels && $err_code != E_CONN_CLOSED_BY_CLIENT ) {
       foreach my $name ( keys %channels ) {
@@ -1124,12 +1116,6 @@ Requires Redis 1.2 or higher, and any supported event loop.
       # handling...
     },
 
-    on_connect_error => sub {
-      my $err = shift;
-
-      # error handling...
-    },
-
     on_error => sub {
       my $err = shift;
 
@@ -1171,9 +1157,9 @@ Enabled by default.
 =item connection_timeout => $fractional_seconds
 
 Specifies connection timeout. If the client could not connect to the server
-after specified timeout, the C<on_connect_error> callback is called with the
-C<E_CANT_CONN> error, or if it not specified, the C<on_error> callback is
-called. The timeout specifies in seconds and can contain a fractional part.
+after specified timeout, the C<on_error> callback is called with the
+C<E_CANT_CONN> error. The timeout specifies in seconds and can contain a
+fractional part.
 
   connection_timeout => 10.5,
 
@@ -1244,18 +1230,10 @@ reason.
 
 Not set by default.
 
-=item on_connect_error => $cb->( $err )
-
-The C<on_connect_error> callback is called, when the connection could not be
-established. If this callback isn't specified, the C<on_error> callback is
-called.
-
-Not set by default.
-
 =item on_error => $cb->( $err )
 
 The C<on_error> callback is called when occurred an error, which was affected
-on whole client (e. g. connection error or authentication error). Also the
+on entire client (e. g. connection error or authentication error). Also the
 C<on_error> callback is called on command errors if the command callback is not
 specified. If the C<on_error> callback is not specified, the client just print
 an error messages to C<STDERR>.
@@ -1858,10 +1836,6 @@ Get or set the C<on_connect> callback.
 =head2 on_disconnect( [ $callback ] )
 
 Get or set the C<on_disconnect> callback.
-
-=head2 on_connect_error( [ $callback ] )
-
-Get or set the C<on_connect_error> callback.
 
 =head2 on_error( [ $callback ] )
 

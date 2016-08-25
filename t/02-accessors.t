@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use lib 't/tlib';
-use Test::More tests => 41;
+use Test::More tests => 37;
 use AnyEvent::RipeRedis qw( :err_codes );
 use AnyEvent::RipeRedis::Error;
 
@@ -23,12 +23,8 @@ my $REDIS = AnyEvent::RipeRedis->new(
     return 2;
   },
 
-  on_connect_error => sub {
-    return 3;
-  },
-
   on_error => sub {
-    return 4;
+    return 3;
   },
 );
 
@@ -41,7 +37,6 @@ can_ok( $REDIS, 'utf8' );
 can_ok( $REDIS, 'reconnect' );
 can_ok( $REDIS, 'on_connect' );
 can_ok( $REDIS, 'on_disconnect' );
-can_ok( $REDIS, 'on_connect_error' );
 can_ok( $REDIS, 'on_error' );
 
 t_host($REDIS);
@@ -54,7 +49,6 @@ t_min_reconnect_interval($REDIS);
 t_utf8($REDIS);
 t_on_connect($REDIS);
 t_on_disconnect($REDIS);
-t_on_connect_error($REDIS);
 t_on_error($REDIS);
 
 
@@ -203,31 +197,11 @@ sub t_on_disconnect {
   return;
 }
 
-sub t_on_connect_error {
-  my $redis = shift;
-
-  my $on_conn_error = $redis->on_connect_error;
-  is( $on_conn_error->(), 3, q{get "on_connect_error" callback} );
-
-  $redis->on_connect_error(undef);
-  is( $redis->on_connect_error, undef,
-      q{disable "on_connect_error" callback} );
-
-  $redis->on_connect_error(
-    sub {
-      return 7;
-    }
-  );
-  is( $redis->on_connect_error->(), 7, q{set "on_connect_error" callback} );
-
-  return;
-}
-
 sub t_on_error {
   my $redis = shift;
 
   my $on_error = $redis->on_error;
-  is( $on_error->(), 4, q{get "on_error" callback} );
+  is( $on_error->(), 3, q{get "on_error" callback} );
 
   local %SIG;
   my $t_err;
@@ -245,11 +219,11 @@ sub t_on_error {
 
   $redis->on_error(
     sub {
-      return 8;
+      return 4;
     }
   );
 
-  is( $redis->on_error->(), 8, q{set "on_error" callback} );
+  is( $redis->on_error->(), 4, q{set "on_error" callback} );
 
   return;
 }
