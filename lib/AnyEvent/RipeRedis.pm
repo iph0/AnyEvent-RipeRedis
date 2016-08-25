@@ -1417,7 +1417,7 @@ L<http://redis.io/topics/pubsub>
 
 Subscribes the client to the specified channels.
 
-Method can accept two callbacks, C<on_reply> and C<on_message>. The C<on_reply>
+Method can accept two callbacks: C<on_reply> and C<on_message>. The C<on_reply>
 callback is called when subscription to all specified channels will be
 activated. In first argument to the callback is passed the number of channels
 we are currently subscribed. If subscription to specified channels was lost,
