@@ -1246,10 +1246,10 @@ an error messages to C<STDERR>.
 
 The full list of the Redis commands can be found here: L<http://redis.io/commands>.
 
-The reply to the command is passed to the callback in first argument. If any
-error occurred during command execution, the error object is passed to the
-callback in second argument. Error object is the instance of the class
-L<AnyEvent::RipeRedis::Error>.
+To execute the command you must call specific method. The reply to the command
+is passed to the callback in first argument. If any error occurred during
+command execution, the error object is passed to the callback in second
+argument. Error object is an instance of the class L<AnyEvent::RipeRedis::Error>.
 
 The command callback is optional. If it is not specified and any error
 occurred, the C<on_error> callback of the client is called.
