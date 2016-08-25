@@ -1,5 +1,12 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.08 Wed Aug 25 11:18:30 MSK 2016
+  - Added method "execute()".
+  - Getter "selected_database()" renamed to "database()".
+  - Bugfix. "DISCARD" command do not turned off transaction mode.
+  - Refactoring.
+  - POD Improved.
+
 0.06 Fri Jul 29 10:51:10 MSK 2016
   - Improved POD.
   - Light refactoring.

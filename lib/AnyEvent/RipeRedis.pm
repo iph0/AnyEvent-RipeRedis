@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.07_03';
+our $VERSION = '0.08';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -61,9 +61,9 @@ use constant {
   %ERROR_CODES,
 
   # Operation status
-  S_NEED_DO      => 1,
-  S_IN_PROGRESS  => 2,
-  S_DONE         => 3,
+  S_NEED_DO     => 1,
+  S_IN_PROGRESS => 2,
+  S_DONE        => 3,
 
   # String terminator
   EOL        => "\r\n",
@@ -1117,9 +1117,9 @@ Requires Redis 1.2 or higher, and any supported event loop.
     port                   => 6379,
     password               => 'yourpass',
     database               => 7,
-    lazy                   => 1,
     connection_timeout     => 5,
     read_timeout           => 5,
+    lazy                   => 1,
     min_reconnect_interval => 5,
 
     on_connect => sub {
@@ -1169,8 +1169,8 @@ The default database index is C<0>.
 
 =item utf8 => $boolean
 
-If enabled, all strings will be converted to UTF-8 before sending to server,
-and all results will be decoded from UTF-8.
+If enabled, all strings will be converted to UTF-8 before sending to
+the server, and all results will be decoded from UTF-8.
 
 Enabled by default.
 
@@ -1206,7 +1206,7 @@ Disabled by default.
 
 =item reconnect => $boolean
 
-If the connection to the Redis server was lost and the parameter C<reconnect> is
+If the connection to the server was lost and the parameter C<reconnect> is
 TRUE (default), the client try to restore the connection when you execute next
 command. The client try to reconnect only once and, if attempt fails, the error
 object is passed to command callback. If you need several attempts of the
@@ -1435,7 +1435,7 @@ L<http://redis.io/topics/pubsub>
 
 Subscribes the client to the specified channels.
 
-Method can accept two callbacks: C<on_reply> and C<on_message>. The C<on_reply>
+Method can accept two callbacks, C<on_reply> and C<on_message>. The C<on_reply>
 callback is called when subscription to all specified channels will be
 activated. In first argument to the callback is passed the number of channels
 we are currently subscribed. If subscription to specified channels was lost,
@@ -1788,15 +1788,13 @@ The cluster is down or hash slot not served.
 When the connection to the server is no longer needed you can close it in three
 ways: call the method C<disconnect()>, send the C<QUIT> command or you can just
 "forget" any references to an AnyEvent::RipeRedis object, but in this
-case a client object is destroyed without calling any callbacks, including
+case the client object is destroyed without calling any callbacks, including
 the C<on_disconnect> callback, to avoid an unexpected behavior.
 
 =head2 disconnect()
 
 The method for synchronous disconnection. All uncompleted operations will be
 aborted.
-
-  $redis->disconnect();
 
 =head2 quit( [ $cb->( $reply, $err ) ] )
 
