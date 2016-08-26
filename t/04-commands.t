@@ -740,7 +740,7 @@ sub t_discard {
 sub t_execute {
   my $redis = shift;
 
-  can_ok( $REDIS, 'execute' );
+  can_ok( $redis, 'execute' );
 
   my $t_reply;
 

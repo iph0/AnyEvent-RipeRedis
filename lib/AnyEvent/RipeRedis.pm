@@ -916,7 +916,7 @@ sub _disconnect {
   $self->_abort($err);
 
   if ( $was_connected && defined $self->{on_disconnect} ) {
-    $self->{on_disconnect}->($self);
+    $self->{on_disconnect}->();
   }
 
   return;
