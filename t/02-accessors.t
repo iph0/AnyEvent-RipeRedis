@@ -2,7 +2,6 @@ use 5.008000;
 use strict;
 use warnings;
 
-use lib 't/tlib';
 use Test::More tests => 37;
 use AnyEvent::RipeRedis qw( :err_codes );
 use AnyEvent::RipeRedis::Error;
