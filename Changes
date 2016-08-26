@@ -1,5 +1,10 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.10 Wed Aug 26 11:44:35 MSK 2016
+  - Removed "on_connect_error" callback.
+  - POD Improved.
+  - Unit tests improved.
+
 0.08 Wed Aug 25 11:18:30 MSK 2016
   - Added method "execute()".
   - Getter "selected_database()" renamed to "database()".

@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.09_01';
+our $VERSION = '0.10';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1187,11 +1187,11 @@ Disabled by default.
 =item reconnect => $boolean
 
 If the connection to the server was lost and the parameter C<reconnect> is
-TRUE (default), the client try to restore the connection when you execute next
-command. The client try to reconnect only once and, if attempt fails, the error
-object is passed to command callback. If you need several attempts of the
-reconnection, you must retry a command from the callback as many times, as you
-need. Such behavior allows to control reconnection procedure.
+TRUE (default), the client will try to restore the connection when you execute
+next command. The client will try to reconnect only once and, if attempt fails,
+the error object is passed to command callback. If you need several attempts of
+the reconnection, you must retry a command from the callback as many times, as
+you need. Such behavior allows to control reconnection procedure.
 
 Enabled by default.
 
@@ -1244,15 +1244,15 @@ an error messages to C<STDERR>.
 
 =head2 <command>( [ @args ] [, $cb->( $reply, $err ) ] )
 
-The full list of the Redis commands can be found here: L<http://redis.io/commands>.
-
 To execute the command you must call specific method. The reply to the command
 is passed to the callback in first argument. If any error occurred during
-command execution, the error object is passed to the callback in second
+the command execution, the error object is passed to the callback in second
 argument. Error object is an instance of the class L<AnyEvent::RipeRedis::Error>.
 
 The command callback is optional. If it is not specified and any error
 occurred, the C<on_error> callback of the client is called.
+
+The full list of the Redis commands can be found here: L<http://redis.io/commands>.
 
   $redis->get( 'foo',
     sub {
