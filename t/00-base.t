@@ -4,22 +4,22 @@ use warnings;
 
 use Test::More tests => 8;
 
-my $T_CLIENT_CLASS;
-my $T_ERR_CLASS;
+my $t_client_class;
+my $t_err_class;
 
 BEGIN {
-  $T_CLIENT_CLASS = 'AnyEvent::RipeRedis';
-  use_ok( $T_CLIENT_CLASS );
+  $t_client_class = 'AnyEvent::RipeRedis';
+  use_ok( $t_client_class );
 
-  $T_ERR_CLASS = 'AnyEvent::RipeRedis::Error';
-  use_ok( $T_ERR_CLASS );
+  $t_err_class = 'AnyEvent::RipeRedis::Error';
+  use_ok( $t_err_class );
 }
 
-can_ok( $T_CLIENT_CLASS, 'new' );
-my $redis = new_ok( $T_CLIENT_CLASS );
+can_ok( $t_client_class, 'new' );
+my $redis = new_ok( $t_client_class );
 
-can_ok( $T_ERR_CLASS, 'new' );
-my $err = new_ok( $T_ERR_CLASS => [ 'Some error', 9 ] );
+can_ok( $t_err_class, 'new' );
+my $err = new_ok( $t_err_class => [ 'Some error', 9 ] );
 
 can_ok( $err, 'message' );
 can_ok( $err, 'code' );

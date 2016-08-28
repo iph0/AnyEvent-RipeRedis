@@ -9,27 +9,27 @@ use Scalar::Util qw( weaken );
 use version 0.77;
 require 't/test_helper.pl';
 
-my $SERVER_INFO = run_redis_instance();
-if ( !defined $SERVER_INFO ) {
+my $server_info = run_redis_instance();
+if ( !defined $server_info ) {
   plan skip_all => 'redis-server is required for this test';
 }
-my $REDIS = AnyEvent::RipeRedis->new(
-  host => $SERVER_INFO->{host},
-  port => $SERVER_INFO->{port},
+my $redis = AnyEvent::RipeRedis->new(
+  host => $server_info->{host},
+  port => $server_info->{port},
 );
-my $ver = get_redis_version($REDIS);
+my $ver = get_redis_version($redis);
 if ( $ver < version->parse( 'v2.6' ) ) {
   plan skip_all => 'redis-server 2.6 or higher is required for this test';
 }
 plan tests => 17;
 
-t_no_script($REDIS);
-t_eval_cached($REDIS);
-t_eval_cached_mbulk($REDIS);
-t_error_reply($REDIS);
-t_errors_in_mbulk_reply($REDIS);
+t_no_script($redis);
+t_eval_cached($redis);
+t_eval_cached_mbulk($redis);
+t_error_reply($redis);
+t_errors_in_mbulk_reply($redis);
 
-$REDIS->disconnect;
+$redis->disconnect;
 
 
 sub t_no_script {

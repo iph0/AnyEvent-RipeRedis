@@ -7,23 +7,24 @@ use Test::More;
 use AnyEvent::RipeRedis qw( :err_codes );
 require 't/test_helper.pl';
 
-my $SERVER_INFO = run_redis_instance();
-if ( !defined $SERVER_INFO ) {
+my $server_info = run_redis_instance();
+if ( !defined $server_info ) {
   plan skip_all => 'redis-server is required for this test';
 }
 plan tests => 33;
 
-my $REDIS;
-my $T_IS_CONN = 0;
-my $T_IS_DISCONN = 0;
+my $T_CONNECTED    = 0;
+my $T_DISCONNECTED = 0;
+
+my $redis;
 
 ev_loop(
   sub {
     my $cv = shift;
 
-    $REDIS = AnyEvent::RipeRedis->new(
-      host               => $SERVER_INFO->{host},
-      port               => $SERVER_INFO->{port},
+    $redis = AnyEvent::RipeRedis->new(
+      host               => $server_info->{host},
+      port               => $server_info->{port},
       connection_timeout => 5,
       read_timeout       => 5,
       encoding           => 'utf8',
@@ -32,37 +33,37 @@ ev_loop(
       },
 
       on_connect => sub {
-        $T_IS_CONN = 1;
+        $T_CONNECTED = 1;
         $cv->send;
       },
       on_disconnect => sub {
-        $T_IS_DISCONN = 1;
+        $T_DISCONNECTED = 1;
       },
     );
   },
 );
 
-ok( $T_IS_CONN, 'on_connect' );
+ok( $T_CONNECTED, 'on_connect' );
 
-t_status_reply($REDIS);
-t_numeric_reply($REDIS);
-t_bulk_reply($REDIS);
-t_set_undef($REDIS);
-t_get_undef($REDIS);
-t_set_utf8_string($REDIS);
-t_get_utf8_string($REDIS);
-t_get_non_existent($REDIS);
-t_mbulk_reply($REDIS);
-t_mbulk_reply_empty_list($REDIS);
-t_mbulk_reply_undef($REDIS);
-t_nested_mbulk_reply($REDIS);
-t_multi_word_command($REDIS);
-t_oprn_error($REDIS);
-t_default_on_error($REDIS);
-t_error_after_exec($REDIS);
-t_discard($REDIS);
-t_execute($REDIS);
-t_quit($REDIS);
+t_status_reply($redis);
+t_numeric_reply($redis);
+t_bulk_reply($redis);
+t_set_undef($redis);
+t_get_undef($redis);
+t_set_utf8_string($redis);
+t_get_utf8_string($redis);
+t_get_non_existent($redis);
+t_mbulk_reply($redis);
+t_mbulk_reply_empty_list($redis);
+t_mbulk_reply_undef($redis);
+t_nested_mbulk_reply($redis);
+t_multi_word_command($redis);
+t_oprn_error($redis);
+t_default_on_error($redis);
+t_error_after_exec($redis);
+t_discard($redis);
+t_execute($redis);
+t_quit($redis);
 
 
 sub t_status_reply {
@@ -541,7 +542,7 @@ sub t_nested_mbulk_reply {
 sub t_multi_word_command {
   my $redis = shift;
 
-  my $ver = get_redis_version($REDIS);
+  my $ver = get_redis_version($redis);
 
   SKIP: {
     if ( $ver < version->parse( 'v2.6.9' ) ) {
@@ -804,7 +805,7 @@ sub t_quit {
   );
 
   is( $t_reply, 'OK', 'QUIT; status reply; disconnect' );
-  ok( $T_IS_DISCONN, 'on_disconnect' );
+  ok( $T_DISCONNECTED, 'on_disconnect' );
 
   return;
 }

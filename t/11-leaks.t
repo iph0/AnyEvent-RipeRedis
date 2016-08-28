@@ -15,34 +15,34 @@ BEGIN {
   }
 }
 
-my $SERVER_INFO = run_redis_instance();
-if ( !defined $SERVER_INFO ) {
+my $server_info = run_redis_instance();
+if ( !defined $server_info ) {
   plan skip_all => 'redis-server is required for this test';
 }
 plan tests => 6;
 
-my $REDIS = AnyEvent::RipeRedis->new(
-  host => $SERVER_INFO->{host},
-  port => $SERVER_INFO->{port},
+my $redis = AnyEvent::RipeRedis->new(
+  host => $server_info->{host},
+  port => $server_info->{port},
 );
 
-t_leaks_status_reply($REDIS);
-t_leaks_bulk_reply($REDIS);
-t_leaks_mbulk_reply($REDIS);
-t_leaks_nested_mbulk_reply($REDIS);
-t_leaks_subunsub($REDIS);
+t_leaks_status_reply($redis);
+t_leaks_bulk_reply($redis);
+t_leaks_mbulk_reply($redis);
+t_leaks_nested_mbulk_reply($redis);
+t_leaks_subunsub($redis);
 
-my $ver = get_redis_version( $REDIS );
+my $ver = get_redis_version($redis);
 
 SKIP: {
   if ( $ver < version->parse( 'v2.6' ) ) {
     skip 'redis-server 2.6 or higher is required for this test', 1;
   }
 
-  t_leaks_eval_cached($REDIS);
+  t_leaks_eval_cached($redis);
 }
 
-$REDIS->disconnect;
+$redis->disconnect;
 
 
 sub t_leaks_status_reply {

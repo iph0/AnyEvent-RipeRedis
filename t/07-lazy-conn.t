@@ -12,21 +12,22 @@ if ( !defined $SERVER_INFO ) {
 }
 plan tests => 2;
 
-my $REDIS;
-my $T_IS_CONN = 0;
+my $T_CONNECTED = 0;
+
+my $redis;
 
 ev_loop(
   sub {
     my $cv = shift;
 
-    $REDIS = AnyEvent::RipeRedis->new(
+    $redis = AnyEvent::RipeRedis->new(
       host       => $SERVER_INFO->{host},
       port       => $SERVER_INFO->{port},
       lazy       => 1,
       reconnect  => 0,
 
       on_connect => sub {
-        $T_IS_CONN = 1;
+        $T_CONNECTED = 1;
       },
     );
 
@@ -36,9 +37,9 @@ ev_loop(
       cb    => sub {
         undef $timer;
 
-        ok( !$T_IS_CONN, 'lazy connection (no connected yet)' );
+        ok( !$T_CONNECTED, 'lazy connection (no connected yet)' );
 
-        $REDIS->ping(
+        $redis->ping(
           sub {
             my $reply = shift;
             my $err   = shift;
@@ -55,4 +56,4 @@ ev_loop(
   }
 );
 
-ok( $T_IS_CONN, 'lazy connection (connected)' );
+ok( $T_CONNECTED, 'lazy connection (connected)' );

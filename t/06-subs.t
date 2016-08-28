@@ -6,40 +6,40 @@ use Test::More;
 use AnyEvent::RipeRedis qw( :err_codes );
 require 't/test_helper.pl';
 
-my $SERVER_INFO = run_redis_instance();
-if ( !defined $SERVER_INFO ) {
+my $server_info = run_redis_instance();
+if ( !defined $server_info ) {
   plan skip_all => 'redis-server is required for this test';
 }
 plan tests => 13;
 
-my $R_CONSUM = AnyEvent::RipeRedis->new(
-  host => $SERVER_INFO->{host},
-  port => $SERVER_INFO->{port},
+my $r_consum = AnyEvent::RipeRedis->new(
+  host => $server_info->{host},
+  port => $server_info->{port},
 );
-my $R_TRANSM = AnyEvent::RipeRedis->new(
-  host => $SERVER_INFO->{host},
-  port => $SERVER_INFO->{port},
+my $r_transm = AnyEvent::RipeRedis->new(
+  host => $server_info->{host},
+  port => $server_info->{port},
 );
 
-t_subunsub( $R_CONSUM, $R_TRANSM );
-t_psubunsub( $R_CONSUM, $R_TRANSM );
+t_subunsub( $r_consum, $r_transm );
+t_psubunsub( $r_consum, $r_transm );
 
-$R_CONSUM->disconnect;
-$R_TRANSM->disconnect;
+$r_consum->disconnect;
+$r_transm->disconnect;
 
-my $REDIS = AnyEvent::RipeRedis->new(
-  host => $SERVER_INFO->{host},
-  port => $SERVER_INFO->{port},
+my $redis = AnyEvent::RipeRedis->new(
+  host => $server_info->{host},
+  port => $server_info->{port},
   on_error => sub {
     # do not print this errors
   },
 );
 
-t_sub_after_multi($REDIS);
-t_sub_after_exec($REDIS);
-t_sub_after_discard($REDIS);
+t_sub_after_multi($redis);
+t_sub_after_exec($redis);
+t_sub_after_discard($redis);
 
-$REDIS->disconnect;
+$redis->disconnect;
 
 
 sub t_subunsub {

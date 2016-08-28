@@ -6,7 +6,7 @@ use Test::More tests => 37;
 use AnyEvent::RipeRedis qw( :err_codes );
 use AnyEvent::RipeRedis::Error;
 
-my $REDIS = AnyEvent::RipeRedis->new(
+my $redis = AnyEvent::RipeRedis->new(
   password               => 'test',
   connection_timeout     => 10,
   read_timeout           => 5,
@@ -27,36 +27,34 @@ my $REDIS = AnyEvent::RipeRedis->new(
   },
 );
 
-can_ok( $REDIS, 'host' );
-can_ok( $REDIS, 'port' );
-can_ok( $REDIS, 'database' );
-can_ok( $REDIS, 'connection_timeout' );
-can_ok( $REDIS, 'read_timeout' );
-can_ok( $REDIS, 'utf8' );
-can_ok( $REDIS, 'reconnect' );
-can_ok( $REDIS, 'on_connect' );
-can_ok( $REDIS, 'on_disconnect' );
-can_ok( $REDIS, 'on_error' );
+can_ok( $redis, 'host' );
+can_ok( $redis, 'port' );
+can_ok( $redis, 'database' );
+can_ok( $redis, 'connection_timeout' );
+can_ok( $redis, 'read_timeout' );
+can_ok( $redis, 'utf8' );
+can_ok( $redis, 'reconnect' );
+can_ok( $redis, 'on_connect' );
+can_ok( $redis, 'on_disconnect' );
+can_ok( $redis, 'on_error' );
 
-t_host($REDIS);
-t_port($REDIS);
-t_database($REDIS);
-t_conn_timeout($REDIS);
-t_read_timeout($REDIS);
-t_reconnect($REDIS);
-t_min_reconnect_interval($REDIS);
-t_utf8($REDIS);
-t_on_connect($REDIS);
-t_on_disconnect($REDIS);
-t_on_error($REDIS);
+t_host($redis);
+t_port($redis);
+t_database($redis);
+t_conn_timeout($redis);
+t_read_timeout($redis);
+t_reconnect($redis);
+t_min_reconnect_interval($redis);
+t_utf8($redis);
+t_on_connect($redis);
+t_on_disconnect($redis);
+t_on_error($redis);
 
 
 sub t_host {
   my $redis = shift;
 
-  my $t_host = $redis->host;
-
-  is( $t_host, 'localhost', 'get host' );
+  is( $redis->host, 'localhost', 'get host' );
 
   return;
 }
@@ -64,9 +62,7 @@ sub t_host {
 sub t_port {
   my $redis = shift;
 
-  my $t_port = $redis->port;
-
-  is( $t_port, 6379, 'get port' );
+  is( $redis->port, 6379, 'get port' );
 
   return;
 }
@@ -74,9 +70,7 @@ sub t_port {
 sub t_database {
   my $redis = shift;
 
-  my $t_db_index = $redis->database;
-
-  is( $t_db_index, 0, 'get database index' );
+  is( $redis->database, 0, 'get database index' );
 
   return;
 }
@@ -84,8 +78,7 @@ sub t_database {
 sub t_conn_timeout {
   my $redis = shift;
 
-  my $t_conn_timeout = $redis->connection_timeout;
-  is( $t_conn_timeout, 10, q{get "connection_timeout"} );
+  is( $redis->connection_timeout, 10, q{get "connection_timeout"} );
 
   $redis->connection_timeout(undef);
   is( $redis->connection_timeout, undef,
@@ -100,8 +93,7 @@ sub t_conn_timeout {
 sub t_read_timeout {
   my $redis = shift;
 
-  my $t_read_timeout = $redis->read_timeout;
-  is( $t_read_timeout, 5, q{get "read_timeout"} );
+  is( $redis->read_timeout, 5, q{get "read_timeout"} );
 
   $redis->read_timeout(undef);
   is( $redis->read_timeout, undef, q{disable "read_timeout"} );
@@ -115,8 +107,7 @@ sub t_read_timeout {
 sub t_reconnect {
   my $redis = shift;
 
-  my $reconn_state = $redis->reconnect;
-  is( $reconn_state, 1, q{get current reconnection mode state} );
+  is( $redis->reconnect, 1, q{get current reconnection mode state} );
 
   $redis->reconnect(undef);
   is( $redis->reconnect, undef, q{disable reconnection mode} );
@@ -130,8 +121,7 @@ sub t_reconnect {
 sub t_min_reconnect_interval {
   my $redis = shift;
 
-  my $t_min_reconnect_interval = $redis->min_reconnect_interval;
-  is( $t_min_reconnect_interval, 5, q{get "min_reconnect_interval"} );
+  is( $redis->min_reconnect_interval, 5, q{get "min_reconnect_interval"} );
 
   $redis->min_reconnect_interval(undef);
   is( $redis->min_reconnect_interval, undef,
@@ -146,8 +136,7 @@ sub t_min_reconnect_interval {
 sub t_utf8 {
   my $redis = shift;
 
-  my $utf8_state = $redis->utf8;
-  is( $utf8_state, 1, q{get current UTF8 mode state} );
+  is(  $redis->utf8, 1, q{get current UTF8 mode state} );
 
   $redis->utf8(undef);
   is( $redis->utf8, undef, q{disable UTF8 mode} );
@@ -161,18 +150,17 @@ sub t_utf8 {
 sub t_on_connect {
   my $redis = shift;
 
-  my $on_conn = $redis->on_connect;
-  is( $on_conn->(), 1, q{get "on_connect" callback} );
+  is( $redis->on_connect->(), 1, q{get "on_connect" callback} );
 
   $redis->on_connect(undef);
   is( $redis->on_connect, undef, q{disable "on_connect" callback} );
 
   $redis->on_connect(
     sub {
-      return 5;
+      return 4;
     }
   );
-  is( $redis->on_connect->(), 5, q{set "on_connect" callback} );
+  is( $redis->on_connect->(), 4, q{set "on_connect" callback} );
 
   return;
 }
@@ -180,18 +168,17 @@ sub t_on_connect {
 sub t_on_disconnect {
   my $redis = shift;
 
-  my $on_disconn = $redis->on_disconnect;
-  is( $on_disconn->(), 2, q{get "on_disconnect" callback} );
+  is( $redis->on_disconnect->(), 2, q{get "on_disconnect" callback} );
 
   $redis->on_disconnect(undef);
   is( $redis->on_disconnect, undef, q{disable "on_disconnect" callback} );
 
   $redis->on_disconnect(
     sub {
-      return 6;
+      return 5;
     }
   );
-  is( $redis->on_disconnect->(), 6, q{set "on_disconnect" callback} );
+  is( $redis->on_disconnect->(), 5, q{set "on_disconnect" callback} );
 
   return;
 }
@@ -199,8 +186,7 @@ sub t_on_disconnect {
 sub t_on_error {
   my $redis = shift;
 
-  my $on_error = $redis->on_error;
-  is( $on_error->(), 3, q{get "on_error" callback} );
+  is( $redis->on_error->(), 3, q{get "on_error" callback} );
 
   local %SIG;
   my $t_err;
@@ -218,11 +204,11 @@ sub t_on_error {
 
   $redis->on_error(
     sub {
-      return 4;
+      return 6;
     }
   );
 
-  is( $redis->on_error->(), 4, q{set "on_error" callback} );
+  is( $redis->on_error->(), 6, q{set "on_error" callback} );
 
   return;
 }
