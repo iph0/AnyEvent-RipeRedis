@@ -4,7 +4,35 @@ use 5.008000;
 use strict;
 use warnings;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15_01';
+
+our %ERROR_CODES = (
+  E_CANT_CONN                  => 1,
+  E_LOADING_DATASET            => 2,
+  E_IO                         => 3,
+  E_CONN_CLOSED_BY_REMOTE_HOST => 4,
+  E_CONN_CLOSED_BY_CLIENT      => 5,
+  E_NO_CONN                    => 6,
+  E_OPRN_ERROR                 => 9,
+  E_UNEXPECTED_DATA            => 10,
+  E_NO_SCRIPT                  => 11,
+  E_READ_TIMEDOUT              => 12,
+  E_BUSY                       => 13,
+  E_MASTER_DOWN                => 14,
+  E_MISCONF                    => 15,
+  E_READONLY                   => 16,
+  E_OOM                        => 17,
+  E_EXEC_ABORT                 => 18,
+  E_NO_AUTH                    => 19,
+  E_WRONG_TYPE                 => 20,
+  E_NO_REPLICAS                => 21,
+  E_BUSY_KEY                   => 22,
+  E_CROSS_SLOT                 => 23,
+  E_TRY_AGAIN                  => 24,
+  E_ASK                        => 25,
+  E_MOVED                      => 26,
+  E_CLUSTER_DOWN               => 27,
+);
 
 
 sub new {
