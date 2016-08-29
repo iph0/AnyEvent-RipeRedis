@@ -27,7 +27,6 @@ ev_loop(
       port               => $server_info->{port},
       connection_timeout => 5,
       read_timeout       => 5,
-      encoding           => 'utf8',
       handle_params      => {
         autocork => 1,
       },
