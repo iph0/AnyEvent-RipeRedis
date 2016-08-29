@@ -1,5 +1,8 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.12 Mon Aug 29 16:48:05 MSK 2016
+  - Refactoring of unit test.
+
 0.10 Wed Aug 26 11:44:35 MSK 2016
   - Removed "on_connect_error" callback.
   - POD Improved.

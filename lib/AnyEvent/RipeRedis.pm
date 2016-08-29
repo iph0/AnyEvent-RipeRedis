@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.11_01';
+our $VERSION = '0.12';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -201,7 +201,7 @@ sub on_error {
 
 # Generate accessors
 {
-  no strict 'refs';
+  no strict qw( refs );
 
   foreach my $name ( qw( host port database ) ) {
     *{$name} = sub {

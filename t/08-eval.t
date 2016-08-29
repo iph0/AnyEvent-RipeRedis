@@ -191,7 +191,7 @@ sub t_error_reply {
     }
   );
 
-  my $t_npref = 'eval_cached; error reply;';
+  my $t_npref = 'eval_cached; error reply';
   isa_ok( $t_err, 'AnyEvent::RipeRedis::Error' );
   is( $t_err->message, 'ERR Something wrong.', "$t_npref; error message" );
   is( $t_err->code, E_OPRN_ERROR, "$t_npref; error code" );
@@ -225,7 +225,7 @@ sub t_errors_in_mbulk_reply {
     }
   );
 
-  my $t_npref = 'errors in multi-bulk reply;';
+  my $t_npref = 'errors in multi-bulk reply';
   isa_ok( $t_err, 'AnyEvent::RipeRedis::Error' );
   is( $t_err->message, q{Operation "eval_cached" completed with errors.},
       "$t_npref; error message" );

@@ -57,7 +57,7 @@ t_mbulk_reply($redis);
 t_mbulk_reply_empty_list($redis);
 t_mbulk_reply_undef($redis);
 t_nested_mbulk_reply($redis);
-t_multi_word_command($redis);
+t_multiword_command($redis);
 t_oprn_error($redis);
 t_default_on_error($redis);
 t_error_after_exec($redis);
@@ -101,7 +101,7 @@ sub t_status_reply {
     }
   );
 
-  is( $t_reply, 'OK', 'SET; status reply' );
+  is( $t_reply, 'OK', 'status reply; SET' );
 
   return;
 }
@@ -141,7 +141,7 @@ sub t_numeric_reply {
     }
   );
 
-  is( $t_reply, 1, 'INCR; numeric reply' );
+  is( $t_reply, 1, 'numeric reply; INCR' );
 
   return;
 }
@@ -183,7 +183,7 @@ sub t_bulk_reply {
     }
   );
 
-  is( $t_reply, "some\r\nstring", 'GET; bulk reply' );
+  is( $t_reply, "some\r\nstring", 'bulk reply; GET' );
 
   return;
 }
@@ -212,7 +212,7 @@ sub t_set_undef {
     }
   );
 
-  is( $t_reply, 'OK', 'SET; undef' );
+  is( $t_reply, 'OK', 'write undef; SET' );
 
   return;
 }
@@ -241,7 +241,7 @@ sub t_get_undef {
     }
   );
 
-  is( $t_reply, '', 'GET; undef' );
+  is( $t_reply, '', 'read undef; GET' );
 
   return;
 }
@@ -281,7 +281,7 @@ sub t_set_utf8_string {
     }
   );
 
-  is( $t_reply, 'OK', 'SET; UTF-8 string' );
+  is( $t_reply, 'OK', 'write UTF-8 string; SET' );
 
   return;
 }
@@ -323,7 +323,7 @@ sub t_get_utf8_string {
     }
   );
 
-  is( $t_reply, 'Значение', 'GET; UTF-8 string' );
+  is( $t_reply, 'Значение', 'read UTF-8 string; GET' );
 
   return;
 }
@@ -353,7 +353,7 @@ sub t_get_non_existent {
     }
   );
 
-  ok( !defined $t_reply && !defined $t_err, 'GET; non existent key' );
+  ok( !defined $t_reply && !defined $t_err, 'read non existent key; GET' );
 
   return;
 }
@@ -404,7 +404,7 @@ sub t_mbulk_reply {
         element_3
       )
     ],
-    'LRANGE; multi-bulk reply'
+    'multi-bulk reply; LRANGE'
   );
 
   return;
@@ -434,7 +434,7 @@ sub t_mbulk_reply_empty_list {
     }
   );
 
-  is_deeply( $t_reply, [], 'LRANGE; empty list' );
+  is_deeply( $t_reply, [], 'read empty list; LRANGE' );
 
   return;
 }
@@ -464,7 +464,7 @@ sub t_mbulk_reply_undef {
     }
   );
 
-  ok( !defined $t_reply && !defined $t_err, 'BRPOP; multi-bulk undef' );
+  ok( !defined $t_reply && !defined $t_err, 'read multi-bulk undef; BLPOP' );
 
   return;
 }
@@ -533,13 +533,13 @@ sub t_nested_mbulk_reply {
         )
       ],
     ],
-    'EXEC; nested multi-bulk reply'
+    'nested multi-bulk reply; MULTI/EXEC'
   );
 
   return;
 }
 
-sub t_multi_word_command {
+sub t_multiword_command {
   my $redis = shift;
 
   my $ver = get_redis_version($redis);
@@ -570,7 +570,7 @@ sub t_multi_word_command {
       }
     );
 
-    is_deeply( $t_reply, 'OK', 'CLIENT SETNAME; multiple word command' );
+    is_deeply( $t_reply, 'OK', 'multiword command; CLIENT SETNAME' );
 
     ev_loop(
       sub {
@@ -591,7 +591,7 @@ sub t_multi_word_command {
       }
     );
 
-    is_deeply( $t_reply, 'test', 'CLIENT GETNAME; multiple word command' );
+    is_deeply( $t_reply, 'test', 'multiword command; CLIENT GETNAME' );
   }
 
   return;
@@ -618,7 +618,7 @@ sub t_oprn_error {
     }
   );
 
-  my $t_npref = 'operation error;';
+  my $t_npref = 'operation error';
   isa_ok( $t_err, 'AnyEvent::RipeRedis::Error' );
   ok( defined $t_err->message, "$t_npref; error message" );
   is( $t_err->code, E_OPRN_ERROR, "$t_npref; error code" );
@@ -677,7 +677,7 @@ sub t_error_after_exec {
     }
   );
 
-  my $t_npref = 'error after EXEC;';
+  my $t_npref = 'error after EXEC';
   isa_ok( $t_err, 'AnyEvent::RipeRedis::Error' );
   is( $t_err->message, q{Operation "exec" completed with errors.},
       "$t_npref; error message" );
@@ -733,7 +733,7 @@ sub t_discard {
     }
   );
 
-  is( $t_reply, 'OK', 'DISCARD; status reply' );
+  is( $t_reply, 'OK', 'DISCARD' );
 
   return;
 }
@@ -775,7 +775,7 @@ sub t_execute {
     }
   );
 
-  is( $t_reply, 'OK', 'execute; status reply' );
+  is( $t_reply, 'OK', 'execute' );
 
   return;
 }
@@ -804,7 +804,7 @@ sub t_quit {
     }
   );
 
-  is( $t_reply, 'OK', 'QUIT; status reply; disconnect' );
+  is( $t_reply, 'OK', 'disconnect; QUIT' );
   ok( $T_DISCONNECTED, 'on_disconnect' );
 
   return;
