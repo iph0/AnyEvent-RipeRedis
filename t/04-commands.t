@@ -57,7 +57,7 @@ t_mbulk_reply_empty_list($redis);
 t_mbulk_reply_undef($redis);
 t_nested_mbulk_reply($redis);
 t_multiword_command($redis);
-t_oprn_error($redis);
+t_error_reply($redis);
 t_default_on_error($redis);
 t_error_after_exec($redis);
 t_discard($redis);
@@ -596,7 +596,7 @@ sub t_multiword_command {
   return;
 }
 
-sub t_oprn_error {
+sub t_error_reply {
   my $redis = shift;
 
   my $t_err;
@@ -617,7 +617,7 @@ sub t_oprn_error {
     }
   );
 
-  my $t_npref = 'operation error';
+  my $t_npref = 'error reply';
   isa_ok( $t_err, 'AnyEvent::RipeRedis::Error' );
   ok( defined $t_err->message, "$t_npref; error message" );
   is( $t_err->code, E_OPRN_ERROR, "$t_npref; error code" );
@@ -647,7 +647,7 @@ sub t_default_on_error {
     }
   );
 
-  ok( defined $t_err_msg, q{Default 'on_error' callback} );
+  ok( defined $t_err_msg, q{Default "on_error" callback} );
 
   return;
 }
