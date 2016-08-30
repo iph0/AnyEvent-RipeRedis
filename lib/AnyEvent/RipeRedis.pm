@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.18';
+our $VERSION = '0.20';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1848,8 +1848,7 @@ Ivan Kruglov
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2012-2016, Eugene Ponizovsky, E<lt>ponizovsky@gmail.comE<gt>,
-SMS Online, E<lt>dev.opensource@sms-online.comE<gt>. All rights reserved.
+Copyright (c) 2012-2016, Eugene Ponizovsky, SMS Online. All rights reserved.
 
 This module is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

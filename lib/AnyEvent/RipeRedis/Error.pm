@@ -4,7 +4,7 @@ use 5.008000;
 use strict;
 use warnings;
 
-our $VERSION = '0.18';
+our $VERSION = '0.20';
 
 our %ERROR_CODES = (
   E_CANT_CONN                  => 1,

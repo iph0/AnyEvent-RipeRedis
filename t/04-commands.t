@@ -61,7 +61,7 @@ t_error_reply($redis);
 t_default_on_error($redis);
 t_error_after_exec($redis);
 t_discard($redis);
-t_execute($redis);
+t_execute_method($redis);
 t_quit($redis);
 
 
@@ -737,7 +737,7 @@ sub t_discard {
   return;
 }
 
-sub t_execute {
+sub t_execute_method {
   my $redis = shift;
 
   can_ok( $redis, 'execute' );
@@ -774,7 +774,7 @@ sub t_execute {
     }
   );
 
-  is( $t_reply, 'OK', 'execute' );
+  is( $t_reply, 'OK', 'execute method' );
 
   return;
 }
