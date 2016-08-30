@@ -12,10 +12,8 @@ t_cant_connect();
 t_no_connection();
 t_reconnection();
 t_read_timeout();
-
-t_premature_conn_close_mth1();
-t_premature_conn_close_mth2();
-
+t_premature_disconnect();
+t_premature_destroy();
 t_subscription_lost();
 
 
@@ -295,7 +293,7 @@ sub t_read_timeout {
   return;
 }
 
-sub t_premature_conn_close_mth1 {
+sub t_premature_disconnect {
   my $t_cli_err;
   my $t_cmd_err;
 
@@ -314,7 +312,7 @@ sub t_premature_conn_close_mth1 {
 
   $redis->disconnect;
 
-  my $t_npref = 'premature connection close; disconnect() used';
+  my $t_npref = 'premature disconnect';
   isa_ok( $t_cli_err, 'AnyEvent::RipeRedis::Error' );
   is( $t_cli_err->message, 'Connection closed by client prematurely.',
       "$t_npref; client error message" );
@@ -328,7 +326,7 @@ sub t_premature_conn_close_mth1 {
   return;
 }
 
-sub t_premature_conn_close_mth2 {
+sub t_premature_destroy {
   my $on_error_was_called = 0;
   my $t_cmd_err_msg;
 
@@ -352,7 +350,7 @@ sub t_premature_conn_close_mth2 {
 
   undef $redis;
 
-  my $t_npref = 'premature connection close; undef() used';
+  my $t_npref = 'premature destroy';
   ok( !$on_error_was_called, "$t_npref; 'on_error' callback ignored" );
   is( $t_cmd_err_msg,
       q{Operation "ping" aborted: Client object destroyed prematurely.},

@@ -1,5 +1,12 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.22 Tue Aug 30 19:51:25 MSK 2016
+  - Unit tests improved.
+
+0.20 Tue Aug 30 19:20:30 MSK 2016
+  - Minor changes in POD.
+  - Cosmetic changes in tests.
+
 0.18 Tue Aug 30 11:03:25 MSK 2016
   - Added link to AnyEvent::RipeRedis::Cluster in POD.
 

@@ -60,7 +60,7 @@ t_multiword_command($redis);
 t_error_reply($redis);
 t_default_on_error($redis);
 t_error_after_exec($redis);
-t_discard($redis);
+t_discard_method($redis);
 t_execute_method($redis);
 t_quit($redis);
 
@@ -692,7 +692,7 @@ sub t_error_after_exec {
   return;
 }
 
-sub t_discard {
+sub t_discard_method {
   my $redis = shift;
 
   my $t_reply;
@@ -732,7 +732,7 @@ sub t_discard {
     }
   );
 
-  is( $t_reply, 'OK', 'DISCARD' );
+  is( $t_reply, 'OK', 'discard method' );
 
   return;
 }
