@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.15_01';
+our $VERSION = '0.16';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1215,10 +1215,11 @@ an error messages to C<STDERR>.
 
 =head2 <command>( [ @args ] [, $cb->( $reply, $err ) ] )
 
-To execute the command you must call specific method. The reply to the command
-is passed to the callback in first argument. If any error occurred during
-the command execution, the error object is passed to the callback in second
-argument. Error object is an instance of the class L<AnyEvent::RipeRedis::Error>.
+To execute the command you must call specific method with corresponding name.
+The reply to the command is passed to the callback in first argument. If any
+error occurred during the command execution, the error object is passed to the
+callback in second argument. Error object is an instance of the class
+L<AnyEvent::RipeRedis::Error>.
 
 The command callback is optional. If it is not specified and any error
 occurred, the C<on_error> callback of the client is called.

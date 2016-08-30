@@ -1,5 +1,10 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.16 Tue Aug 30 11:00:00 MSK 2016
+  - %ERROR_CODES moved to AnyEvent::RipeRedis::Error.
+  - Minor changes in unit tests.
+  - Changes in POD.
+
 0.14 Mon Aug 29 17:01:40 MSK 2016
   - Removed unnecessary string in unit test.
 
@@ -29,4 +34,4 @@ Revision history for AnyEvent::RipeRedis.
   - Removed unused code. Cosmetic.
 
 0.02 Mon Jul 25 15:37:30 MSK 2016
-  - First stable release of new incarnation of AnyEvent::Redis::RipeRedis.
+  - First release of new incarnation of AnyEvent::Redis::RipeRedis.
