@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.16';
+our $VERSION = '0.18';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -1815,7 +1815,8 @@ Get or set the C<on_error> callback.
 
 =head1 SEE ALSO
 
-L<AnyEvent>, L<Redis::hiredis>, L<Redis>, L<RedisDB>
+L<AnyEvent::RipeRedis::Cluster>, L<AnyEvent>, L<Redis::hiredis>, L<Redis>,
+L<RedisDB>
 
 =head1 AUTHOR
 

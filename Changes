@@ -1,5 +1,8 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.18 Tue Aug 30 11:03:25 MSK 2016
+  - Added link to AnyEvent::RipeRedis::Cluster in POD.
+
 0.16 Tue Aug 30 11:00:00 MSK 2016
   - %ERROR_CODES moved to AnyEvent::RipeRedis::Error.
   - Minor changes in unit tests.
