@@ -152,7 +152,7 @@ sub t_not_allowed_after_multi {
     exception {
       $redis->subscribe('channel');
     },
-    qr/Command "subscribe" not allowed after "multi" command\./,
+    qr/Command "subscribe" not allowed after "multi" command/,
     "not allowed after multi; SUBSCRIBE",
   );
 
@@ -160,7 +160,7 @@ sub t_not_allowed_after_multi {
     exception {
       $redis->unsubscribe('channel');
     },
-    qr/Command "unsubscribe" not allowed after "multi" command\./,
+    qr/Command "unsubscribe" not allowed after "multi" command/,
     "not allowed after multi; UNSUBSCRIBE",
   );
 
@@ -168,7 +168,7 @@ sub t_not_allowed_after_multi {
     exception {
       $redis->psubscribe('pattern_*');
     },
-    qr/Command "psubscribe" not allowed after "multi" command\./,
+    qr/Command "psubscribe" not allowed after "multi" command/,
     "not allowed after multi; PSUBSCRIBE",
   );
 
@@ -176,7 +176,7 @@ sub t_not_allowed_after_multi {
     exception {
       $redis->punsubscribe('pattern_*');
     },
-    qr/Command "punsubscribe" not allowed after "multi" command\./,
+    qr/Command "punsubscribe" not allowed after "multi" command/,
     "not allowed after multi; PUNSUBSCRIBE",
   );
 
@@ -184,7 +184,7 @@ sub t_not_allowed_after_multi {
     exception {
       $redis->info;
     },
-    qr/Command "info" not allowed after "multi" command\./,
+    qr/Command "info" not allowed after "multi" command/,
     "not allowed after multi; INFO",
   );
 
@@ -192,7 +192,7 @@ sub t_not_allowed_after_multi {
     exception {
       $redis->select(2);
     },
-    qr/Command "select" not allowed after "multi" command\./,
+    qr/Command "select" not allowed after "multi" command/,
     "not allowed after multi; SELECT",
   );
 
@@ -200,7 +200,7 @@ sub t_not_allowed_after_multi {
     exception {
       $redis->quit;
     },
-    qr/Command "quit" not allowed after "multi" command\./,
+    qr/Command "quit" not allowed after "multi" command/,
     "not allowed after multi; QUIT",
   );
 
