@@ -2,7 +2,7 @@ use 5.008000;
 use strict;
 use warnings;
 
-use Test::More tests => 15;
+use Test::More tests => 20;
 use Test::Fatal;
 use AnyEvent::RipeRedis;
 
@@ -153,7 +153,39 @@ sub t_not_allowed_after_multi {
       $redis->subscribe('channel');
     },
     qr/Command "subscribe" not allowed after "multi" command\./,
-    "t_not_allowed_after_multi; SUBSCRIBE",
+    "not allowed after multi; SUBSCRIBE",
+  );
+
+  like(
+    exception {
+      $redis->unsubscribe('channel');
+    },
+    qr/Command "unsubscribe" not allowed after "multi" command\./,
+    "not allowed after multi; UNSUBSCRIBE",
+  );
+
+  like(
+    exception {
+      $redis->psubscribe('pattern_*');
+    },
+    qr/Command "psubscribe" not allowed after "multi" command\./,
+    "not allowed after multi; PSUBSCRIBE",
+  );
+
+  like(
+    exception {
+      $redis->punsubscribe('pattern_*');
+    },
+    qr/Command "punsubscribe" not allowed after "multi" command\./,
+    "not allowed after multi; PUNSUBSCRIBE",
+  );
+
+  like(
+    exception {
+      $redis->info;
+    },
+    qr/Command "info" not allowed after "multi" command\./,
+    "not allowed after multi; INFO",
   );
 
   like(
@@ -161,7 +193,15 @@ sub t_not_allowed_after_multi {
       $redis->select(2);
     },
     qr/Command "select" not allowed after "multi" command\./,
-    "t_not_allowed_after_multi; SELECT",
+    "not allowed after multi; SELECT",
+  );
+
+  like(
+    exception {
+      $redis->quit;
+    },
+    qr/Command "quit" not allowed after "multi" command\./,
+    "not allowed after multi; QUIT",
   );
 
   $redis->disconnect;
