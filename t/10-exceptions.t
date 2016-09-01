@@ -105,7 +105,7 @@ sub t_min_reconnect_interval {
       );
     },
     qr/"min_reconnect_interval" must be a positive number/,
-    "invalid 'min_reconnect_interval' (character string; constructor)",
+    q{invalid "min_reconnect_interval" (character string; constructor)},
   );
 
   like(
@@ -115,7 +115,7 @@ sub t_min_reconnect_interval {
       );
     },
     qr/"min_reconnect_interval" must be a positive number/,
-    "invalid 'min_reconnect_interval' (negative number; constructor)",
+    q{invalid "min_reconnect_interval" (negative number; constructor)},
   );
 
   my $redis = AnyEvent::RipeRedis->new();
@@ -125,7 +125,7 @@ sub t_min_reconnect_interval {
       $redis->min_reconnect_interval('invalid');
     },
     qr/"min_reconnect_interval" must be a positive number/,
-    "invalid 'min_reconnect_interval' (character string; accessor)",
+    q{invalid "min_reconnect_interval" (character string; accessor)},
   );
 
   like(
@@ -133,7 +133,7 @@ sub t_min_reconnect_interval {
       $redis->min_reconnect_interval(-5);
     },
     qr/"min_reconnect_interval" must be a positive number/,
-    "invalid 'min_reconnect_interval' (negative number; accessor)",
+    q{invalid "min_reconnect_interval" (negative number; accessor)},
   );
 
   return;
