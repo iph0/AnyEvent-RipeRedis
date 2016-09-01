@@ -2,13 +2,14 @@ use 5.008000;
 use strict;
 use warnings;
 
-use Test::More tests => 13;
+use Test::More tests => 15;
 use Test::Fatal;
 use AnyEvent::RipeRedis;
 
 t_conn_timeout();
 t_read_timeout();
 t_min_reconnect_interval();
+t_not_allowed_after_multi();
 t_on_message();
 
 
@@ -134,6 +135,36 @@ sub t_min_reconnect_interval {
     qr/"min_reconnect_interval" must be a positive number/,
     "invalid 'min_reconnect_interval' (negative number; accessor)",
   );
+
+  return;
+}
+
+sub t_not_allowed_after_multi {
+  my $redis = AnyEvent::RipeRedis->new(
+    on_error => sub {
+      # do not print error
+    }
+  );
+
+  $redis->multi;
+
+  like(
+    exception {
+      $redis->subscribe('channel');
+    },
+    qr/Command "subscribe" not allowed after "multi" command\./,
+    "t_not_allowed_after_multi; SUBSCRIBE",
+  );
+
+  like(
+    exception {
+      $redis->select(2);
+    },
+    qr/Command "select" not allowed after "multi" command\./,
+    "t_not_allowed_after_multi; SELECT",
+  );
+
+  $redis->disconnect;
 
   return;
 }

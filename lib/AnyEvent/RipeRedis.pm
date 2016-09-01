@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.22';
+our $VERSION = '0.23_01';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -506,6 +506,14 @@ sub _execute {
   my $self = shift;
   my $cmd  = shift;
 
+  if ( $self->{_multi_mode}
+    && ( exists $SUBUNSUB_CMDS{ $cmd->{name} }
+      || exists $NEED_POSTPROCESS{ $cmd->{name} } ) )
+  {
+    croak qq{Command "$cmd->{name}" not allowed after "multi" command.}
+        . ' First, the transaction must be finalized.';
+  }
+
   if ( exists $NEED_PREPROCESS{ $cmd->{name} } ) {
     if ( $cmd->{name} eq 'multi' ) {
       $self->{_multi_mode} = 1;
@@ -527,20 +535,7 @@ sub _execute {
       if ( exists $SUB_CMDS{ $cmd->{name} }
         && !defined $cmd->{on_message} )
       {
-        croak q{"on_message" callback must be specified};
-      }
-
-      if ( $self->{_multi_mode} ) {
-        AE::postpone {
-          my $err = _new_error(
-            qq{Command "$cmd->{name}" not allowed after "multi" command.}
-                . ' First, the transaction must be finalized.',
-            E_OPRN_ERROR
-          );
-          $cmd->{on_reply}->( undef, $err );
-        };
-
-        return;
+        croak '"on_message" callback must be specified';
       }
 
       if ( @{ $cmd->{args} } ) {
