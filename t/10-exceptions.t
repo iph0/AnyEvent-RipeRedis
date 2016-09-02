@@ -8,7 +8,7 @@ use AnyEvent::RipeRedis;
 
 t_conn_timeout();
 t_read_timeout();
-t_min_reconnect_interval();
+t_reconnect_interval();
 t_not_allowed_after_multi();
 t_on_message();
 
@@ -97,43 +97,43 @@ sub t_read_timeout {
   return;
 }
 
-sub t_min_reconnect_interval {
+sub t_reconnect_interval {
   like(
     exception {
       my $redis = AnyEvent::RipeRedis->new(
-        min_reconnect_interval => 'invalid',
+        reconnect_interval => 'invalid',
       );
     },
-    qr/"min_reconnect_interval" must be a positive number/,
-    q{invalid "min_reconnect_interval" (character string; constructor)},
+    qr/"reconnect_interval" must be a positive number/,
+    q{invalid "reconnect_interval" (character string; constructor)},
   );
 
   like(
     exception {
       my $redis = AnyEvent::RipeRedis->new(
-        min_reconnect_interval => -5,
+        reconnect_interval => -5,
       );
     },
-    qr/"min_reconnect_interval" must be a positive number/,
-    q{invalid "min_reconnect_interval" (negative number; constructor)},
+    qr/"reconnect_interval" must be a positive number/,
+    q{invalid "reconnect_interval" (negative number; constructor)},
   );
 
   my $redis = AnyEvent::RipeRedis->new();
 
   like(
     exception {
-      $redis->min_reconnect_interval('invalid');
+      $redis->reconnect_interval('invalid');
     },
-    qr/"min_reconnect_interval" must be a positive number/,
-    q{invalid "min_reconnect_interval" (character string; accessor)},
+    qr/"reconnect_interval" must be a positive number/,
+    q{invalid "reconnect_interval" (character string; accessor)},
   );
 
   like(
     exception {
-      $redis->min_reconnect_interval(-5);
+      $redis->reconnect_interval(-5);
     },
-    qr/"min_reconnect_interval" must be a positive number/,
-    q{invalid "min_reconnect_interval" (negative number; accessor)},
+    qr/"reconnect_interval" must be a positive number/,
+    q{invalid "reconnect_interval" (negative number; accessor)},
   );
 
   return;

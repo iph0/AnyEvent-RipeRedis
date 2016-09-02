@@ -7,12 +7,11 @@ use AnyEvent::RipeRedis qw( :err_codes );
 use AnyEvent::RipeRedis::Error;
 
 my $redis = AnyEvent::RipeRedis->new(
-  password               => 'test',
-  connection_timeout     => 10,
-  read_timeout           => 5,
-  reconnect              => 1,
-  min_reconnect_interval => 5,
-  encoding               => 'utf8',
+  password           => 'test',
+  connection_timeout => 10,
+  read_timeout       => 5,
+  reconnect          => 1,
+  reconnect_interval => 5,
 
   on_connect => sub {
     return 1;
@@ -44,7 +43,7 @@ t_database($redis);
 t_conn_timeout($redis);
 t_read_timeout($redis);
 t_reconnect($redis);
-t_min_reconnect_interval($redis);
+t_reconnect_interval($redis);
 t_utf8($redis);
 t_on_connect($redis);
 t_on_disconnect($redis);
@@ -118,17 +117,17 @@ sub t_reconnect {
   return;
 }
 
-sub t_min_reconnect_interval {
+sub t_reconnect_interval {
   my $redis = shift;
 
-  is( $redis->min_reconnect_interval, 5, q{get "min_reconnect_interval"} );
+  is( $redis->reconnect_interval, 5, q{get "reconnect_interval"} );
 
-  $redis->min_reconnect_interval(undef);
-  is( $redis->min_reconnect_interval, undef,
-      q{disable "min_reconnect_interval"} );
+  $redis->reconnect_interval(undef);
+  is( $redis->reconnect_interval, undef,
+      q{disable "reconnect_interval"} );
 
-  $redis->min_reconnect_interval(10);
-  is( $redis->min_reconnect_interval, 10, q{set "min_reconnect_interval"} );
+  $redis->reconnect_interval(10);
+  is( $redis->reconnect_interval, 10, q{set "reconnect_interval"} );
 
   return;
 }

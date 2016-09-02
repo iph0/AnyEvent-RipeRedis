@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.24';
+our $VERSION = '0.25_01';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -114,7 +114,7 @@ sub new {
 
   $self->connection_timeout( $params{connection_timeout} );
   $self->read_timeout( $params{read_timeout} );
-  $self->min_reconnect_interval( $params{min_reconnect_interval} );
+  $self->reconnect_interval( $params{reconnect_interval} );
   $self->on_error( $params{on_error} );
 
   $self->_reset_internals;
@@ -182,7 +182,7 @@ sub on_error {
   }
 
   foreach my $name ( qw( connection_timeout read_timeout
-      min_reconnect_interval ) )
+      reconnect_interval ) )
   {
     *{$name} = sub {
       my $self = shift;
@@ -562,12 +562,12 @@ sub _execute {
       $self->_connect;
     }
     elsif ( $self->{reconnect} ) {
-      if ( defined $self->{min_reconnect_interval}
-        && $self->{min_reconnect_interval} > 0 )
+      if ( defined $self->{reconnect_interval}
+        && $self->{reconnect_interval} > 0 )
       {
         unless ( defined $self->{_reconnect_timer} ) {
           $self->{_reconnect_timer} = AE::timer(
-            $self->{min_reconnect_interval}, 0,
+            $self->{reconnect_interval}, 0,
             sub {
               undef $self->{_reconnect_timer};
               $self->_connect;
@@ -1065,14 +1065,14 @@ Requires Redis 1.2 or higher, and any supported event loop.
 =head2 new( %params )
 
   my $redis = AnyEvent::RipeRedis->new(
-    host                   => 'localhost',
-    port                   => 6379,
-    password               => 'yourpass',
-    database               => 7,
-    connection_timeout     => 5,
-    read_timeout           => 5,
-    lazy                   => 1,
-    min_reconnect_interval => 5,
+    host               => 'localhost',
+    port               => 6379,
+    password           => 'yourpass',
+    database           => 7,
+    connection_timeout => 5,
+    read_timeout       => 5,
+    lazy               => 1,
+    reconnect_interval => 5,
 
     on_connect => sub {
       # handling...
@@ -1161,12 +1161,12 @@ you need. Such behavior allows to control reconnection procedure.
 
 Enabled by default.
 
-=item min_reconnect_interval => $fractional_seconds
+=item reconnect_interval => $fractional_seconds
 
-If the parameter is specified, the client will try to reconnect not often, than
-after this interval. Commands executed between reconnections will be queued.
+If the parameter is specified, the client will try to reconnect only after
+this interval. Commands executed between reconnections will be queued.
 
-  min_reconnect_interval => 5,
+  reconnect_interval => 5,
 
 Not set by default.
 
@@ -1792,9 +1792,9 @@ Get or set the C<read_timeout> of the client.
 
 Enables or disables reconnection mode of the client.
 
-=head2 min_reconnect_interval( [ $fractional_seconds ] )
+=head2 reconnect_interval( [ $fractional_seconds ] )
 
-Get or set C<min_reconnect_interval> of the client.
+Get or set C<reconnect_interval> of the client.
 
 =head2 on_connect( [ $callback ] )
 
