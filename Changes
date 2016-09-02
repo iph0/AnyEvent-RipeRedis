@@ -1,5 +1,9 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.24 Fri Sep 2 12:00:25 MSK 2016
+  - Error "not allowed after "multi"" now raise exception.
+  - Unit tests improved.
+
 0.22 Tue Aug 30 19:51:25 MSK 2016
   - Unit tests improved.
 
