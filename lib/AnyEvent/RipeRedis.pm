@@ -349,9 +349,7 @@ sub _create_on_read {
     my $handle = shift;
 
     MAIN: while (1) {
-      if ( $handle->destroyed ) {
-        return;
-      }
+      return if $handle->destroyed;
 
       my $reply;
       my $err_code;
@@ -987,6 +985,10 @@ sub AUTOLOAD {
 
 sub DESTROY {
   my $self = shift;
+
+  if ( defined $self->{_handle} ) {
+    $self->{_handle}->destroy;
+  }
 
   if ( defined $self->{_processing_queue} ) {
     my @queued_commands = $self->_queued_commands;
