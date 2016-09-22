@@ -30,6 +30,7 @@ $redis->incr( 'foo',
 
     if ( defined $err ) {
       warn $err->message . "\n";
+      return;
     }
 
     print "$reply\n";
@@ -199,7 +200,6 @@ $redis->quit(
 
     if ( defined $err ) {
       warn $err->message . "\n";
-      return;
     }
 
     $cv->send;
