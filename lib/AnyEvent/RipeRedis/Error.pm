@@ -4,7 +4,7 @@ use 5.008000;
 use strict;
 use warnings;
 
-our $VERSION = '0.28';
+our $VERSION = '0.29_01';
 
 our %ERROR_CODES = (
   E_CANT_CONN                  => 1,
@@ -90,10 +90,15 @@ Get error code.
 
 L<AnyEvent::RipeRedis>
 
+=head1 AUTHOR
+
+Eugene Ponizovsky, E<lt>ponizovsky@gmail.comE<gt>
+
+Sponsored by SMS Online, E<lt>dev.opensource@sms-online.comE<gt>
+
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2012-2016, Eugene Ponizovsky, E<lt>ponizovsky@gmail.comE<gt>.
-All rights reserved.
+Copyright (c) 2012-2016, Eugene Ponizovsky, SMS Online. All rights reserved.
 
 This module is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

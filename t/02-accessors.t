@@ -2,7 +2,7 @@ use 5.008000;
 use strict;
 use warnings;
 
-use Test::More tests => 37;
+use Test::More tests => 38;
 use AnyEvent::RipeRedis qw( :err_codes );
 use AnyEvent::RipeRedis::Error;
 
@@ -33,6 +33,7 @@ can_ok( $redis, 'connection_timeout' );
 can_ok( $redis, 'read_timeout' );
 can_ok( $redis, 'utf8' );
 can_ok( $redis, 'reconnect' );
+can_ok( $redis, 'reconnect_interval' );
 can_ok( $redis, 'on_connect' );
 can_ok( $redis, 'on_disconnect' );
 can_ok( $redis, 'on_error' );

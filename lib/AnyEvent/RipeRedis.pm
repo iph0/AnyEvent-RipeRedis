@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.28';
+our $VERSION = '0.29_01';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -20,7 +20,7 @@ our %ERROR_CODES;
 BEGIN {
   %ERROR_CODES = %AnyEvent::RipeRedis::Error::ERROR_CODES;
   our @EXPORT_OK   = keys %ERROR_CODES;
-  our %EXPORT_TAGS = ( err_codes => \@EXPORT_OK, );
+  our %EXPORT_TAGS = ( err_codes => \@EXPORT_OK );
 }
 
 use constant {
@@ -1215,7 +1215,7 @@ an error messages to C<STDERR>.
 To execute the command you must call specific method with corresponding name.
 The reply to the command is passed to the callback in first argument. If any
 error occurred during the command execution, the error object is passed to the
-callback in second argument. Error object is an instance of the class
+callback in second argument. Error object is the instance of the class
 L<AnyEvent::RipeRedis::Error>.
 
 The command callback is optional. If it is not specified and any error
@@ -1382,7 +1382,7 @@ C<UNSUBSCRIBE>, C<PUNSUBSCRIBE> and C<QUIT> commands.
 The detailed information about Redis Pub/Sub can be found here:
 L<http://redis.io/topics/pubsub>
 
-=head2 subscribe( @channels, ( $cb | \%cbs ) )
+=head2 subscribe( @channels, ( $cb->( $msg, $channel ) | \%cbs ) )
 
 Subscribes the client to the specified channels.
 
@@ -1428,7 +1428,7 @@ C<on_message> callback.
     }
   );
 
-=head2 psubscribe( @patterns, ( $cb | \%cbs ) )
+=head2 psubscribe( @patterns, ( $cb->( $msg, $pattern, $channel ) | \%cbs ) )
 
 Subscribes the client to the given patterns. See C<subscribe()> method for
 details.
@@ -1763,11 +1763,11 @@ L<http://redis.io/commands/info>
 
 =head2 host()
 
-Get current host of the client.
+Gets current host of the client.
 
 =head2 port()
 
-Get current port of the client.
+Gets current port of the client.
 
 =head2 select( $index, [, $cb->( $reply, $err ) ] )
 
@@ -1775,7 +1775,7 @@ Selects the database by numeric index.
 
 =head2 database()
 
-Get selected database index.
+Gets selected database index.
 
 =head2 utf8( [ $boolean ] )
 
@@ -1783,12 +1783,12 @@ Enables or disables UTF-8 mode.
 
 =head2 connection_timeout( [ $fractional_seconds ] )
 
-Get or set the C<connection_timeout> of the client. The C<undef> value resets
+Gets or sets the C<connection_timeout> of the client. The C<undef> value resets
 the C<connection_timeout> to default value.
 
 =head2 read_timeout( [ $fractional_seconds ] )
 
-Get or set the C<read_timeout> of the client.
+Gets or sets the C<read_timeout> of the client.
 
 =head2 reconnect( [ $boolean ] )
 
@@ -1796,19 +1796,19 @@ Enables or disables reconnection mode of the client.
 
 =head2 reconnect_interval( [ $fractional_seconds ] )
 
-Get or set C<reconnect_interval> of the client.
+Gets or sets C<reconnect_interval> of the client.
 
 =head2 on_connect( [ $callback ] )
 
-Get or set the C<on_connect> callback.
+Gets or sets the C<on_connect> callback.
 
 =head2 on_disconnect( [ $callback ] )
 
-Get or set the C<on_disconnect> callback.
+Gets or sets the C<on_disconnect> callback.
 
 =head2 on_error( [ $callback ] )
 
-Get or set the C<on_error> callback.
+Gets or sets the C<on_error> callback.
 
 =head1 SEE ALSO
 
