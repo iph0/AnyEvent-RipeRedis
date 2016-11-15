@@ -494,7 +494,7 @@ sub _prepare {
         $self->{on_error}->( $err, $reply );
         return;
       }
-    }
+    };
   }
 
   return $cmd;
