@@ -1,5 +1,10 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.30 Sun Nov 20 19:40:55 MSK 2016
+  - Fixes in POD.
+  - Fixes in tests.
+  - Cosmetic changes in code.
+
 0.28 Fri Sep 23 12:10:33 MSK 2016
   - Bugfix. If the client object was destroyed prematurely, in some cases
     "_process_reply" method have been called on undefined value.
