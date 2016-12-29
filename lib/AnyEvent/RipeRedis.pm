@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.30';
+our $VERSION = '0.32';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -564,6 +564,8 @@ sub _execute {
         && $self->{reconnect_interval} > 0 )
       {
         unless ( defined $self->{_reconnect_timer} ) {
+          weaken($self);
+
           $self->{_reconnect_timer} = AE::timer(
             $self->{reconnect_interval}, 0,
             sub {
@@ -1181,7 +1183,7 @@ Specifies L<AnyEvent::Handle> parameters.
     linger   => 60,
   }
 
-Enabling of the C<autocork> parameter can improve perfomance. See
+Enabling of the C<autocork> parameter can improve performance. See
 documentation on L<AnyEvent::Handle> for more information.
 
 =item on_connect => $cb->()
