@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.32';
+our $VERSION = '0.33_01';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -487,11 +487,10 @@ sub _prepare {
     weaken($self);
 
     $cmd->{on_reply} = sub {
-      my $reply = shift;
-      my $err   = shift;
+      my $err = $_[1];
 
       if ( defined $err ) {
-        $self->{on_error}->( $err, $reply );
+        $self->{on_error}->($err);
         return;
       }
     };
