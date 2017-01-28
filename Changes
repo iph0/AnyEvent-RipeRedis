@@ -1,5 +1,8 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.34 Sat Jan 28 18:59:15 MSK 2017
+  - Light refactoring.
+
 0.32 Thu Dec 29 15:16:05 MSK 2016
   - Weakened one more circular reference.
   - Fixed typo in POD.
