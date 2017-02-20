@@ -66,9 +66,10 @@ my %NEED_PREPROCESS = (
 );
 
 my %NEED_POSTPROCESS = (
-  info   => 1,
-  select => 1,
-  quit   => 1,
+  info         => 1,
+  cluster_info => 1,
+  select       => 1,
+  quit         => 1,
 );
 
 my %ERR_PREFS_MAP = (
@@ -850,9 +851,10 @@ sub _process_success {
     shift @{ $self->{_processing_queue} };
 
     if ( exists $NEED_POSTPROCESS{ $cmd->{name} } ) {
-      if ( $cmd->{name} eq 'info' ) {
-        $reply = { map { split( m/:/, $_, 2 ) }
-            grep { m/^[^#]/ } split( EOL, $reply ) };
+      if ( $cmd->{name} eq 'info'
+        || $cmd->{name} eq 'cluster_info' )
+      {
+        $reply = _parse_info($reply);
       }
       elsif ( $cmd->{name} eq 'select' ) {
         $self->{database} = $cmd->{args}[0];
@@ -866,6 +868,11 @@ sub _process_success {
   }
 
   return;
+}
+
+sub _parse_info {
+  return { map { split( m/:/, $_, 2 ) }
+      grep { m/^[^#]/ } split( EOL, $_[0] ) };
 }
 
 sub _disconnect {
