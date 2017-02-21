@@ -2,6 +2,7 @@ Revision history for AnyEvent::RipeRedis.
 
 0.36 Tue Feb 21 14:55:42 MSK 2017
   - Added parsing of reply for "CLUSTER INFO" command.
+  - Added README.pod file instead of README file.
 
 0.34 Sat Jan 28 18:59:15 MSK 2017
   - Light refactoring.
