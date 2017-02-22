@@ -653,6 +653,10 @@ No matching script. Use the C<EVAL> command.
 Redis is busy running a script. You can only call C<SCRIPT KILL>
 or C<SHUTDOWN NOSAVE>.
 
+=item E_NOT_BUSY
+
+No scripts in execution right now.
+
 =item E_MASTER_DOWN
 
 Link with MASTER is down and slave-serve-stale-data is set to 'no'.
