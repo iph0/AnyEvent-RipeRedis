@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.36';
+our $VERSION = '0.37_01';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -15,7 +15,7 @@ use Scalar::Util qw( looks_like_number weaken );
 use Digest::SHA qw( sha1_hex );
 use Carp qw( croak );
 
-our %ERROR_CODES;
+my %ERROR_CODES;
 
 BEGIN {
   %ERROR_CODES = %AnyEvent::RipeRedis::Error::ERROR_CODES;
@@ -90,6 +90,7 @@ my %ERR_PREFS_MAP = (
   ASK         => E_ASK,
   MOVED       => E_MOVED,
   CLUSTERDOWN => E_CLUSTER_DOWN,
+  NOTBUSY     => E_NOT_BUSY,
 );
 
 my %EVAL_CACHE;

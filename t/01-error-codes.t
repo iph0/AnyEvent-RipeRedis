@@ -2,7 +2,7 @@ use 5.008000;
 use strict;
 use warnings;
 
-use Test::More tests => 25;
+use Test::More tests => 26;
 use AnyEvent::RipeRedis qw( :err_codes );
 
 is( E_CANT_CONN, 1, 'E_CANT_CONN' );
@@ -30,3 +30,4 @@ is( E_TRY_AGAIN, 24, 'E_TRY_AGAIN' );
 is( E_ASK, 25, 'E_ASK' );
 is( E_MOVED, 26, 'E_MOVED' );
 is( E_CLUSTER_DOWN, 27, 'E_CLUSTER_DOWN' );
+is( E_NOT_BUSY, 28, 'E_NOT_BUSY' );
