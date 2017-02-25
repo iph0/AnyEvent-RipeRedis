@@ -1,5 +1,9 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.38 Sat Feb 25 16:38:55 MSK 2017
+  - Added error code E_NOT_BUSY.
+  - Minor fixes.
+
 0.36 Tue Feb 21 14:55:42 MSK 2017
   - Added parsing of reply for "CLUSTER INFO" command.
   - Added README.pod file instead of README file.
