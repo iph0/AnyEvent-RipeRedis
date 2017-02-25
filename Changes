@@ -1,5 +1,8 @@
 Revision history for AnyEvent::RipeRedis.
 
+0.40 Sat Feb 25 16:54:34 MSK 2017
+  - Fix in Changes file.
+
 0.38 Sat Feb 25 16:38:55 MSK 2017
   - Added error code E_NOT_BUSY.
   - Minor fixes.
