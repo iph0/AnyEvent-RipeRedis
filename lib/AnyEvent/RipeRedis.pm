@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.40';
+our $VERSION = '0.42';
 
 use AnyEvent::RipeRedis::Error;
 
