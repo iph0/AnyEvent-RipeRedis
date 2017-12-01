@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.42';
+our $VERSION = '0.44';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -646,7 +646,9 @@ sub _auth {
       on_reply => sub {
         my $err = $_[1];
 
-        if ( defined $err ) {
+        if ( defined $err
+          && $err->message ne 'ERR Client sent AUTH, but no password is set' )
+        {
           $self->{_auth_state} = S_NEED_DO;
           $self->_abort($err);
 
