@@ -25,6 +25,7 @@ sub t_cant_connect {
   my $t_cmd_err;
 
   AE::now_update();
+
   ev_loop(
     sub {
       my $cv = shift;
@@ -73,6 +74,7 @@ sub t_no_connection {
   my $t_cmd_err_1;
 
   AE::now_update();
+
   ev_loop(
     sub {
       my $cv = shift;
@@ -152,6 +154,7 @@ sub t_reconnection {
     my $redis;
 
     AE::now_update();
+
     ev_loop(
       sub {
         my $cv = shift;
@@ -251,6 +254,8 @@ sub t_read_timeout {
 
     my $t_cli_err;
     my $t_cmd_err;
+
+    AE::now_update();
 
     ev_loop(
       sub {
