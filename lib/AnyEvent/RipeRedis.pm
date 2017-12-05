@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base qw( Exporter );
 
-our $VERSION = '0.44';
+our $VERSION = '0.46';
 
 use AnyEvent::RipeRedis::Error;
 
@@ -748,6 +748,13 @@ sub _process_error {
       q{Don't know how process error message. Processing queue is empty.},
       E_UNEXPECTED_DATA
     );
+    $self->_disconnect($err);
+
+    return;
+  }
+
+  if ( $err_code == E_NO_AUTH ) {
+    my $err = _new_error( $reply, $err_code );
     $self->_disconnect($err);
 
     return;
