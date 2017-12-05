@@ -262,10 +262,11 @@ sub t_read_timeout {
         my $cv = shift;
 
         $redis = AnyEvent::RipeRedis->new(
-          host         => $server_info->{host},
-          port         => $server_info->{port},
-          reconnect    => 0,
-          read_timeout => 1,
+          host               => $server_info->{host},
+          port               => $server_info->{port},
+          reconnect          => 0,
+          connection_timeout => 6,
+          read_timeout       => 1,
 
           on_error => sub {
             $t_cli_err = shift;
